@@ -119,6 +119,12 @@ export function codeAccepted(given, env = process.env) {
   return !codes.length || codes.includes(norm(given));
 }
 
+// The owner's key as saved in Vercel, with common paste slips removed (spaces, line breaks, quotes,
+// or the variable name pasted along with the value).
+export function ownerKey(env = process.env) {
+  return String(env.ANTHROPIC_API_KEY || "").trim().replace(/^ANTHROPIC_API_KEY\s*=\s*/, "").replace(/^["'`]+|["'`]+$/g, "").replace(/\s+/g, "");
+}
+
 // ---------------- request handler ----------------
 const WINDOW_MS = 10 * 60 * 1000;
 const hits = new Map(); // best-effort, per server instance
@@ -167,7 +173,8 @@ export default async function handler(req, res) {
   if (!codeAccepted(body?.code)) return res.status(401).json({error: "That class code is not right. Check it with your teacher and type it again.", needCode: true});
   if (body?.check) return res.status(200).json({codeOk: true, needCode: codes.length > 0});
 
-  if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({error: "The tutor is not set up yet: the site owner must add the API key."});
+  const key = ownerKey();
+  if (!key) return res.status(500).json({error: "The tutor is not set up yet: the site owner must add the API key."});
 
   const v = validate(body);
   if (!v.ok) return res.status(400).json({error: v.error});
@@ -184,14 +191,21 @@ export default async function handler(req, res) {
   try {
     r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: {"content-type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"},
+      headers: {"content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01"},
       body: JSON.stringify(payload),
     });
   } catch {
     return res.status(502).json({error: "Could not reach the tutor. Try again."});
   }
   if (!r.ok || !r.body) {
-    console.error("anthropic error", r.status, (await r.text().catch(() => "")).slice(0, 300));
+    const lastErr = (await r.text().catch(() => "")).slice(0, 300);
+    console.error("anthropic error", r.status, lastErr);
+    if (r.status === 401 || r.status === 403) {
+      // Never log the key itself: only its shape, to help the owner see what went wrong.
+      console.error("key check: length", key.length, "starts like an Anthropic API key:", key.startsWith("sk-ant-api"));
+      return res.status(502).json({error: "The tutor is not set up correctly: the site owner's Claude API key was refused. The owner must paste a new key in Vercel and redeploy."});
+    }
+    if (r.status === 400 && /credit|billing/i.test(lastErr)) return res.status(502).json({error: "The tutor is paused: the site owner's Claude account has no credit left."});
     return res.status(502).json({error: r.status === 429 ? "The tutor is busy. Try again in a minute." : "The tutor could not reply just now. Try again."});
   }
 
