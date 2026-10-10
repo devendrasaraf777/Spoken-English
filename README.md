@@ -23,7 +23,7 @@ The page sends only the situation, language, level, the learner's words and the 
 | Name | Value | Required |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | Your key from console.anthropic.com | Yes |
-| `ACCESS_CODE` | A class code learners must type, e.g. a word you share with a batch | Recommended |
+| `ACCESS_CODE` | A class code learners must type. Capitals and spaces are ignored. Several codes may be given, separated by commas (for example `batch1, batch2`). A variable named `Access_code` is also read. | Recommended |
 | `TUTOR_MODEL` | `claude-haiku-5-5` (default) or `claude-sonnet-5-5` | No |
 | `RATE_LIMIT` | Answers per device per 10 minutes (default 40) | No |
 
@@ -32,6 +32,10 @@ The page sends only the situation, language, level, the learner's words and the 
 ## Protect your spend
 
 Anyone with the link can use the tutor, and each answer is charged to your key. Set `ACCESS_CODE` so only your learners can use it, and set a monthly spend limit in the Claude Console. On Claude Haiku 5.5 a reply costs about ₹0.014 (from the product plan's cost model).
+
+## Speed
+
+The tutor's answer is streamed. The page says the corrected sentence the moment Claude has written it, and, when there is no mistake, says the reply the moment it is written, while the rest (the tip in the learner's language) is still arriving. Tips are shown on screen and spoken only if the learner ticks "Speak tips aloud". Opening the page wakes the server, so the first answer does not wait for a cold start.
 
 ## Notes
 
