@@ -9,9 +9,8 @@ Learners need no API key. The key lives only on the server, in a Vercel environm
 | Part | File | Runs where |
 | --- | --- | --- |
 | Speaking page | `index.html` | Learner's browser (Chrome or Edge for listening) |
-| Tutor function | `api/tutor.js` | Vercel server; calls Claude with the owner's key |
-| Situations and prompt | `lib/tutor-core.js` | Vercel server |
-| Tests | `test/run.js` | `npm test` |
+| Tutor function, situations and prompt | `api/tutor.js` | Vercel server; calls Claude with the owner's key |
+| Tests | `test.js` | `npm test` |
 
 The page sends only the situation, language, level, the learner's words and the recent conversation. The server builds the tutor prompt itself, so the public address cannot be used as a general Claude service.
 
