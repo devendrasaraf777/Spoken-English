@@ -1,5 +1,5 @@
 // Offline tests for the server function. No real Anthropic call is made.
-import handler, {SCENARIOS, validate, parseReply, finishedField, codeAccepted, MAX_TOKENS} from "./api/tutor.js";
+import handler, {SCENARIOS, validate, parseReply, finishedField, codeAccepted, ownerKey, MAX_TOKENS} from "./api/tutor.js";
 import fs from "node:fs";
 
 let failed = 0;
@@ -86,7 +86,18 @@ failMidway = false;
 upstreamStatus = 529;
 r = await call(good);
 ok(r.code === 502 && r.data.error, "Claude failure before streaming gives a clear 502");
+upstreamStatus = 401;
+r = await call(good);
+ok(r.code === 502 && /API key was refused/.test(r.data.error), "a refused owner key gives a clear message");
 upstreamStatus = 200;
+
+// ---- key paste slips
+const K = "sk-ant-api03-abcDEF_123-xyz";
+ok([K, ` ${K} `, `${K}\n`, `"${K}"`, `'${K}'`, `ANTHROPIC_API_KEY=${K}`, `sk-ant-api03-abc DEF_123-xyz`].every(v => ownerKey({ANTHROPIC_API_KEY: v}) === K), "key cleaned of spaces, line breaks, quotes and a pasted variable name");
+process.env.ANTHROPIC_API_KEY = ` "sk-test"\n`;
+await call(good);
+ok(sent.opts.headers["x-api-key"] === "sk-test", "cleaned key is the one sent to Claude");
+process.env.ANTHROPIC_API_KEY = "sk-test";
 
 // ---- helpers
 ok(finishedField('{"better":"I wen', "better") === null && finishedField('{"better":"I \\"went\\" home","re', "better") === 'I "went" home', "field read only once its closing quote arrives");
