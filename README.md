@@ -1,4 +1,4 @@
-# Bolo Voice Tutor
+# English Bolo Tutor
 
 A spoken-English tutor on the web. The learner talks; the tutor listens, replies by voice, corrects one mistake at a time with a tip in Hindi, Marathi or Bengali, and asks the learner to say the better sentence back.
 
