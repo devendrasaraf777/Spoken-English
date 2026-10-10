@@ -31,7 +31,7 @@ The page sends only the situation, language, level, the learner's words and the 
 
 ## Protect your spend
 
-Anyone with the link can use the tutor, and each answer is charged to your key. Set `ACCESS_CODE` so only your learners can use it, and set a monthly spend limit in the Claude Console. On Claude Haiku 5.5 a reply costs about ₹0.014 (from the product plan's cost model).
+Anyone with the link can use the tutor, and each answer is charged to your key. Set `ACCESS_CODE` so only your learners can use it, and set a monthly spend limit in the Claude Console. On Claude Haiku 5.5 a typical reply costs about ₹0.02, and at most about ₹0.04 (Anthropic list prices of $0.10 input and $0.50 output per million tokens, at ₹95 to the dollar).
 
 ## Speed
 
