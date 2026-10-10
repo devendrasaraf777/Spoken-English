@@ -109,10 +109,13 @@ export function finishedField(text, key) {
 }
 
 // ---------------- class codes ----------------
-const norm = s => String(s ?? "").normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+// Lenient on purpose: capitals, spaces, quotation marks and look-alike characters are ignored, and a
+// value holding commas is accepted both whole and as a list of separate codes.
+const norm = s => String(s ?? "").normalize("NFKC").replace(/["'`\u2018\u2019\u201C\u201D]/g, "")
+  .replace(/[\s\u200B-\u200D\uFEFF]+/g, "").toLowerCase();
 export function classCodes(env = process.env) {
-  return [env.ACCESS_CODE, env.Access_code, env.access_code, env.ACCESS_CODES]
-    .filter(Boolean).flatMap(v => String(v).split(",")).map(norm).filter(Boolean);
+  const raw = Object.keys(env).filter(k => /^access_codes?$/i.test(k.trim())).map(k => String(env[k] ?? "").trim()).filter(Boolean);
+  return [...new Set(raw.flatMap(v => [v, ...v.split(",")]).map(norm).filter(Boolean))];
 }
 export function codeAccepted(given, env = process.env) {
   const codes = classCodes(env);
@@ -170,7 +173,11 @@ export default async function handler(req, res) {
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
   if (limited(ip)) return res.status(429).json({error: "Too many answers in a short time. Wait a few minutes, then carry on."});
 
-  if (!codeAccepted(body?.code)) return res.status(401).json({error: "That class code is not right. Check it with your teacher and type it again.", needCode: true});
+  if (!codeAccepted(body?.code)) {
+    // Shape only, never the codes themselves, so the owner can see why a code was refused.
+    console.error("class code refused: typed length", norm(body?.code).length, "| saved code lengths", classCodes().map(c => c.length).join(","));
+    return res.status(401).json({error: "That class code is not right. Check it with your teacher and type it again.", needCode: true});
+  }
   if (body?.check) return res.status(200).json({codeOk: true, needCode: codes.length > 0});
 
   const key = ownerKey();
