@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bolo Voice Tutor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Mukta:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;600&display=swap">
+<style>
+/* Layout: one speaking stage. A large talk button sits at the centre with the live caption under it;
+   the conversation and corrections run below; settings and session record sit in a side rail. */
+:root{
+  --bg:#f5f6fa; --panel:#ffffff; --ink:#1b2240; --muted:#5b6382; --line:#dde1ec;
+  --accent:#1f6f8b; --accent-soft:#e3f0f4; --fix:#a8650a; --fix-soft:#fbf1e1; --good:#2f7a4b; --good-soft:#e6f3ea;
+  --listen:#c2410c; --listen-soft:#fde7dc; --learner:#1f6f8b; --learner-ink:#ffffff;
+  --display:"Baloo 2","Mukta",system-ui,sans-serif;
+  --body:"Mukta","Noto Sans Bengali",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:12px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12162a; --panel:#1a2038; --ink:#e7eaf6; --muted:#a2a9c4; --line:#2c3454;
+  --accent:#5fb3cf; --accent-soft:#1d3442; --fix:#f0b45a; --fix-soft:#3a2e1a; --good:#7cc79a; --good-soft:#1d3528;
+  --listen:#fb8c5a; --listen-soft:#3b2418; --learner:#2c7d99; --learner-ink:#ffffff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12162a; --panel:#1a2038; --ink:#e7eaf6; --muted:#a2a9c4; --line:#2c3454;
+  --accent:#5fb3cf; --accent-soft:#1d3442; --fix:#f0b45a; --fix-soft:#3a2e1a; --good:#7cc79a; --good-soft:#1d3528;
+  --listen:#fb8c5a; --listen-soft:#3b2418; --learner:#2c7d99; --learner-ink:#ffffff; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:20px 40px}
+[hidden]{display:none!important}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px}
+h1{font-family:var(--display);font-size:2rem;line-height:1.1;margin:0}
+h1 span{color:var(--accent)}
+.tag{color:var(--muted);margin:0;max-width:62ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:grid;gap:14px;min-width:0}
+label,.lbl{display:grid;gap:4px;font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+select,input[type=password],input[type=text],input[type=range]{font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;text-transform:none;letter-spacing:0}
+input[type=range]{padding:0;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:500;color:var(--ink)}
+select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;padding:9px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+details summary{cursor:pointer;font-weight:600}
+.small{font-size:.85rem;color:var(--muted);margin:0}
+.err{color:var(--fix);font-weight:500;margin:0}
+
+/* stage */
+.stage{display:grid;justify-items:center;gap:12px;padding-block:8px 4px;text-align:center}
+.scene h2{font-family:var(--display);font-size:1.35rem;margin:0}
+.scene p{margin:0;color:var(--muted);font-size:.92rem}
+.talk{width:132px;height:132px;border-radius:50%;border:0;display:grid;place-items:center;font-family:var(--display);font-size:1.1rem;line-height:1.15;padding:12px;
+  background:var(--accent);color:#fff;box-shadow:0 0 0 8px var(--accent-soft);transition:box-shadow .2s, background .2s}
+.talk svg{width:34px;height:34px;display:block;margin:0 auto 4px}
+.talk[data-state=listening]{background:var(--listen);box-shadow:0 0 0 8px var(--listen-soft)}
+.talk[data-state=thinking],.talk[data-state=speaking]{background:var(--muted);box-shadow:0 0 0 8px var(--line)}
+@media (prefers-reduced-motion:no-preference){.talk[data-state=listening]{animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 16px var(--listen-soft)}}}
+.status{font-weight:600;min-height:1.5em;margin:0}
+.caption{min-height:3em;max-width:46ch;font-size:1.15rem;margin:0;color:var(--ink)}
+.caption.interim{color:var(--muted);font-style:italic}
+
+/* drill */
+.drill{border:1px solid var(--fix);background:var(--fix-soft);border-radius:var(--radius);padding:12px 14px;display:grid;gap:6px;width:100%;max-width:640px;text-align:left}
+.drill .k{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fix)}
+.target{font-size:1.15rem;font-weight:600;line-height:1.6}
+.w{padding:0 2px;border-radius:4px}
+.w.hit{background:var(--good-soft);color:var(--good)}
+.w.miss{background:var(--fix-soft);color:var(--fix);text-decoration:underline wavy;text-underline-offset:4px}
+.meter{font-variant-numeric:tabular-nums;font-weight:600}
+
+/* log */
+.log{display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow-y:auto;padding:4px 2px}
+.msg{max-width:85%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.tutor{align-self:flex-start;background:var(--accent-soft);border-bottom-left-radius:4px}
+.learner{align-self:flex-end;background:var(--learner);color:var(--learner-ink);border-bottom-right-radius:4px}
+.slip{align-self:flex-start;max-width:85%;background:var(--fix-soft);border-left:3px solid var(--fix);border-radius:8px;padding:8px 12px;font-size:.93rem;display:grid;gap:2px}
+.slip .k{font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--fix)}
+.slip .right{font-weight:600}
+.slip .tip{color:var(--muted)}
+.praise{align-self:flex-start;font-size:.9rem;color:var(--good);background:var(--good-soft);border-radius:8px;padding:4px 10px}
+.hear{background:none;border:0;color:inherit;opacity:.8;padding:0 0 0 6px;font-weight:600;text-decoration:underline;text-underline-offset:2px;font-size:.85rem}
+.typebox{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;width:100%;max-width:640px}
+
+/* rail */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-variant-numeric:tabular-nums}
+.stat{background:var(--bg);border-radius:8px;padding:8px;text-align:center}
+.stat b{display:block;font-family:var(--display);font-size:1.45rem;line-height:1.1}
+.stat small{color:var(--muted);font-size:.75rem}
+.fixlist{margin:0;padding-left:1.2em;display:grid;gap:6px;font-size:.92rem}
+.fixlist s{color:var(--muted)}
+.fixlist em{font-style:normal;color:var(--good);font-weight:600}
+@media (prefers-reduced-motion:no-preference){.msg,.slip,.praise{animation:in .2s ease-out}@keyframes in{from{transform:translateY(4px);opacity:.4}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Bolo <span>Voice</span> Tutor</h1>
+    <p class="tag">Speak English out loud in real situations. The tutor listens, answers by voice, corrects one mistake at a time in your language, and asks you to say the better sentence back.</p>
+  </header>
+
+  <div class="grid">
+    <main class="panel" aria-label="Speaking practice">
+      <div class="stage">
+        <div class="scene">
+          <h2 id="scTitle">Tell me about yourself</h2>
+          <p id="scRole">Job interview · the tutor is the interviewer</p>
+        </div>
+        <button id="talk" class="talk" type="button" data-state="idle" aria-live="polite">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span id="talkLabel">Start</span></span>
+        </button>
+        <p class="status" id="status">Press Start. The tutor will speak first, then listen to you.</p>
+        <p class="caption" id="caption"></p>
+        <div class="row">
+          <button id="stop" type="button" class="ghost" disabled>Stop</button>
+          <button id="typeToggle" type="button" class="ghost">Type instead</button>
+          <button id="newSession" type="button" class="ghost">New situation</button>
+        </div>
+        <form class="typebox" id="typeForm" hidden>
+          <input type="text" id="typeInput" placeholder="Type what you would say…" aria-label="Your answer">
+          <button type="submit">Send</button>
+        </form>
+        <div class="drill" id="drill" hidden>
+          <span class="k">Now you say it</span>
+          <div class="target" id="target"></div>
+          <div class="row"><span class="meter" id="meter"></span><button type="button" class="ghost" id="drillHear">Hear it</button><button type="button" class="ghost" id="drillSkip">Skip</button></div>
+        </div>
+        <p class="err" id="err" hidden></p>
+      </div>
+      <div class="log" id="log" aria-live="polite"></div>
+    </main>
+
+    <aside class="panel" aria-label="Settings and progress">
+      <label for="code" id="codeBox" hidden>Class code
+        <input type="text" id="code" autocomplete="off" placeholder="Code from your teacher">
+      </label>
+      <label for="lang">Tips in
+        <select id="lang">
+          <option value="Hindi">हिंदी (Hindi)</option>
+          <option value="Marathi">मराठी (Marathi)</option>
+          <option value="Bengali">বাংলা (Bengali)</option>
+        </select>
+      </label>
+      <label for="scen">Situation
+        <select id="scen"></select>
+      </label>
+      <label for="level">My level
+        <select id="level">
+          <option value="A1">A1: I know some words</option>
+          <option value="A2" selected>A2: I can say simple sentences</option>
+          <option value="B1">B1: I can talk, with mistakes</option>
+          <option value="B2">B2: I speak fairly well</option>
+        </select>
+      </label>
+      <label for="rate">Tutor's speed <input type="range" id="rate" min="0.7" max="1.1" step="0.05" value="0.9"></label>
+      <label class="check"><input type="checkbox" id="handsFree" checked> Hands-free: listen again after each reply</label>
+      <label class="check"><input type="checkbox" id="drillOn" checked> Ask me to repeat each correction</label>
+      <div class="stats" aria-label="This session">
+        <div class="stat"><b id="sTurns">0</b><small>answers</small></div>
+        <div class="stat"><b id="sWords">0</b><small>words spoken</small></div>
+        <div class="stat"><b id="sTime">0:00</b><small>you spoke</small></div>
+        <div class="stat"><b id="sRepeat">–</b><small>repeat accuracy</small></div>
+      </div>
+      <div class="lbl">Fix these before next time</div>
+      <ol class="fixlist" id="fixes"></ol>
+      <p class="small" id="noFix">Mistakes the tutor corrects collect here.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+"use strict";
+const SCENARIOS = [
+  {id:"intro", use:"Job interview", title:"Tell me about yourself", who:"the interviewer", opener:"Good morning. Please have a seat. To start, tell me a little about yourself."},
+  {id:"hire", use:"Job interview", title:"Why should we hire you?", who:"the HR manager", opener:"Thank you for coming in. Why should we hire you for this delivery executive job?"},
+  {id:"salary", use:"Job interview", title:"Salary and joining date", who:"the HR manager", opener:"We would like to offer you the job. What salary are you expecting, and when can you join?"},
+  {id:"weak", use:"Job interview", title:"Strengths and weaknesses", who:"the interviewer", opener:"Tell me one strength and one weakness you have."},
+  {id:"guest", use:"Workplace and customers", title:"Greeting a hotel guest", who:"a hotel guest checking in", opener:"Hello, I have a booking for two nights under the name Sharma."},
+  {id:"complaint", use:"Workplace and customers", title:"A customer complaint", who:"an unhappy customer at a mobile shop", opener:"I bought this phone last week and the screen has already stopped working. I am not happy."},
+  {id:"leave", use:"Workplace and customers", title:"Asking your manager for leave", who:"your manager", opener:"Yes, come in. You wanted to talk to me about something?"},
+  {id:"supplier", use:"Workplace and customers", title:"Phone call to a supplier", who:"a supplier on the phone", opener:"Hello, Gupta Traders speaking. How can I help you?"},
+  {id:"class", use:"Students", title:"Introducing yourself in class", who:"your new college teacher", opener:"Welcome to the class. Can you please introduce yourself to everyone?"},
+  {id:"doubt", use:"Students", title:"Asking the teacher a doubt", who:"your teacher after class", opener:"Yes, do you have a question about today's lesson?"},
+  {id:"gd", use:"Students", title:"Group discussion: phones in school", who:"another student in a group discussion", opener:"I think mobile phones should be banned in schools. What is your opinion?"},
+  {id:"viva", use:"Students", title:"College viva", who:"the external examiner", opener:"Tell me what your project is about, in two or three sentences."},
+  {id:"doctor", use:"Everyday", title:"At the doctor", who:"the doctor", opener:"Hello, please sit down. What problem are you having?"},
+  {id:"bank", use:"Everyday", title:"At the bank", who:"a bank officer", opener:"Good afternoon. How can I help you today?"},
+  {id:"ptm", use:"Everyday", title:"Parent-teacher meeting", who:"your child's class teacher", opener:"Thank you for coming. Your son is good at maths, but he is weak in reading. Do you read with him at home?"},
+  {id:"train", use:"Everyday", title:"Booking a train ticket", who:"the ticket counter clerk", opener:"Next please. Where do you want to go?"}
+];
+const TIP_VOICE = {Hindi:"hi-IN", Marathi:"mr-IN", Bengali:"bn-IN"};
+
+/* ---------- pure helpers (tested) ---------- */
+function normWords(s){ return String(s).toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9' ]+/g," ").split(/\s+/).filter(Boolean); }
+// Which target words the learner said, in order (longest common subsequence).
+function matchWords(target, spoken){
+  const t = normWords(target), s = normWords(spoken);
+  const dp = Array.from({length:t.length+1}, () => new Array(s.length+1).fill(0));
+  for (let i=t.length-1;i>=0;i--) for (let j=s.length-1;j>=0;j--)
+    dp[i][j] = t[i]===s[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+  const hit = new Array(t.length).fill(false); let i=0,j=0;
+  while (i<t.length && j<s.length){ if (t[i]===s[j]){hit[i]=true;i++;j++;} else if (dp[i+1][j]>=dp[i][j+1]) i++; else j++; }
+  const n = hit.filter(Boolean).length;
+  return {words:t, hit, score: t.length ? Math.round(n/t.length*100) : 0};
+}
+function parseReply(text){
+  const a = text.indexOf("{"), b = text.lastIndexOf("}");
+  if (a<0 || b<a) throw new Error("no json");
+  const d = JSON.parse(text.slice(a,b+1));
+  const out = {reply:String(d.reply||"").trim(), good:String(d.good||"").trim(), correction:null};
+  const c = d.correction;
+  if (c && typeof c === "object" && c.better) out.correction = {said:String(c.said||""), better:String(c.better), tip:String(c.tip||""), type:String(c.type||"")};
+  if (!out.reply) out.reply = "Please go on.";
+  return out;
+}
+const fmtTime = sec => `${Math.floor(sec/60)}:${String(Math.round(sec%60)).padStart(2,"0")}`;
+
+/* ---------- page ---------- */
+const $ = id => document.getElementById(id);
+const ui = {talk:$("talk"), talkLabel:$("talkLabel"), status:$("status"), caption:$("caption"), stop:$("stop"), typeToggle:$("typeToggle"),
+  typeForm:$("typeForm"), typeInput:$("typeInput"), newSession:$("newSession"), drill:$("drill"), target:$("target"), meter:$("meter"),
+  drillHear:$("drillHear"), drillSkip:$("drillSkip"), err:$("err"), log:$("log"), code:$("code"), codeBox:$("codeBox"),
+  lang:$("lang"), scen:$("scen"), level:$("level"), rate:$("rate"), handsFree:$("handsFree"), drillOn:$("drillOn"),
+  sTurns:$("sTurns"), sWords:$("sWords"), sTime:$("sTime"), sRepeat:$("sRepeat"), fixes:$("fixes"), noFix:$("noFix"),
+  scTitle:$("scTitle"), scRole:$("scRole")};
+
+let group=null;
+for (const s of SCENARIOS){
+  if (!group || group.label!==s.use){ group=document.createElement("optgroup"); group.label=s.use; ui.scen.append(group); }
+  const o=document.createElement("option"); o.value=s.id; o.textContent=s.title; group.append(o);
+}
+try { const c = localStorage.getItem("bolo-code"); if (c){ ui.code.value=c; ui.codeBox.hidden=false; } } catch(e){}
+ui.code.addEventListener("change", () => { try { localStorage.setItem("bolo-code", ui.code.value.trim()); } catch(e){} });
+
+const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+const canListen = !!Rec, canSpeak = "speechSynthesis" in window;
+if (!canListen){ ui.typeForm.hidden=false; ui.typeToggle.hidden=true; }
+
+let S;              // session state
+let busy = false;   // a turn is running
+let cancelled = false;
+let rec = null;
+
+function newState(){
+  const sc = SCENARIOS.find(s => s.id===ui.scen.value) || SCENARIOS[0];
+  return {sc, history:[], started:false, answers:0, words:0, spokenMs:0, fixes:[], repeats:[]};
+}
+function setScene(){ ui.scTitle.textContent=S.sc.title; ui.scRole.textContent=`${S.sc.use} · the tutor is ${S.sc.who}`; }
+function setState(state, label, status){
+  ui.talk.dataset.state=state; ui.talkLabel.textContent=label; if (status!==undefined) ui.status.textContent=status;
+  ui.stop.disabled = state==="idle";
+}
+function showErr(t){ ui.err.textContent=t; ui.err.hidden=!t; }
+function renderStats(){
+  ui.sTurns.textContent=S.answers; ui.sWords.textContent=S.words; ui.sTime.textContent=fmtTime(S.spokenMs/1000);
+  ui.sRepeat.textContent = S.repeats.length ? Math.round(S.repeats.reduce((a,b)=>a+b,0)/S.repeats.length)+"%" : "–";
+  ui.fixes.replaceChildren(...S.fixes.slice(-8).map(f => { const li=document.createElement("li"); const s=document.createElement("s"); s.textContent=f.said;
+    const e=document.createElement("em"); e.textContent=f.better; li.append(s, document.createTextNode(" → "), e); return li; }));
+  ui.noFix.hidden = S.fixes.length>0;
+}
+function add(kind, text, extra){
+  const d=document.createElement("div");
+  if (kind==="tutor"||kind==="learner"){ d.className="msg "+kind; d.textContent=text; if (kind==="tutor") d.append(hearBtn(text,"en-IN")); }
+  else if (kind==="praise"){ d.className="praise"; d.textContent=text; }
+  else if (kind==="slip"){ d.className="slip";
+    const k=document.createElement("span"); k.className="k"; k.textContent="Better way to say it"+(extra.type?" · "+extra.type:"");
+    const r=document.createElement("span"); r.className="right"; r.textContent=extra.better; r.append(hearBtn(extra.better,"en-IN"));
+    const t=document.createElement("span"); t.className="tip"; t.textContent=extra.tip; if (extra.tip) t.append(hearBtn(extra.tip, TIP_VOICE[ui.lang.value]));
+    d.append(k,r,t); }
+  ui.log.append(d); ui.log.scrollTop=ui.log.scrollHeight; return d;
+}
+function hearBtn(text, lang){ const b=document.createElement("button"); b.type="button"; b.className="hear"; b.textContent="Hear";
+  b.addEventListener("click", () => { if (!busy) speak(text, lang); }); return b; }
+
+/* ---------- voice out ---------- */
+let voices=[];
+function loadVoices(){ if (canSpeak) voices = speechSynthesis.getVoices(); }
+if (canSpeak){ loadVoices(); speechSynthesis.addEventListener?.("voiceschanged", loadVoices); }
+function pickVoice(lang){
+  const base=lang.slice(0,2);
+  return voices.find(v=>v.lang===lang) || voices.find(v=>v.lang && v.lang.replace("_","-").startsWith(base+"-")) || null;
+}
+function speak(text, lang="en-IN"){
+  return new Promise(resolve => {
+    if (!canSpeak || !text || cancelled) return resolve(false);
+    const v = pickVoice(lang);
+    if (!v && !lang.startsWith("en")) return resolve(false);   // no voice for this language: show the text only
+    const u = new SpeechSynthesisUtterance(text);
+    if (v) u.voice=v; u.lang = v ? v.lang : lang; u.rate = Number(ui.rate.value);
+    let done=false; const end=()=>{ if(!done){done=true; clearTimeout(guard); resolve(true);} };
+    u.onend=end; u.onerror=end;
+    const guard=setTimeout(end, 4000 + text.length*120);   // some browsers never fire onend
+    speechSynthesis.speak(u);
+  });
+}
+
+/* ---------- voice in ---------- */
+function listen(){
+  return new Promise(resolve => {
+    if (!canListen || cancelled) return resolve({text:"", ms:0, error:canListen?"":"unsupported"});
+    rec = new Rec(); rec.lang="en-IN"; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+    let finalText="", started=0, lastHeard=0, error="";
+    rec.onstart=()=>{ started=Date.now(); };
+    rec.onresult=e=>{ let interim=""; lastHeard=Date.now();
+      for (let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if (r.isFinal) finalText+=r[0].transcript+" "; else interim+=r[0].transcript; }
+      ui.caption.textContent=(finalText+interim).trim(); ui.caption.classList.toggle("interim", !!interim); };
+    rec.onerror=e=>{ error=e.error||"error"; };
+    rec.onend=()=>{ rec=null; ui.caption.classList.remove("interim");
+      resolve({text:finalText.trim(), ms: started&&lastHeard ? Math.max(0,lastHeard-started) : 0, error}); };
+    try { rec.start(); } catch(e){ resolve({text:"", ms:0, error:"start"}); }
+  });
+}
+function micMessage(err){
+  if (err==="not-allowed"||err==="service-not-allowed") return "The browser blocked the microphone. Allow microphone access for this page (the icon in the address bar), then press Speak again.";
+  if (err==="no-speech") return "I did not hear anything. Press Speak and talk a little louder.";
+  if (err==="audio-capture") return "No microphone was found. Connect one, or use Type instead.";
+  if (err==="network") return "Speech recognition needs an internet connection.";
+  if (err==="unsupported") return "This browser cannot listen. Use Chrome or Edge, or type your answer.";
+  return "";
+}
+
+/* ---------- tutor server ---------- */
+async function askClaude(learnerText){
+  const body = {scenario:S.sc.id, lang:ui.lang.value, level:ui.level.value, said:learnerText,
+    history:S.history.slice(-12), code:ui.code.value.trim()};
+  let r;
+  try { r = await fetch("/api/tutor", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(body)}); }
+  catch(e){ throw {code:"network"}; }
+  let data = null; try { data = await r.json(); } catch(e){}
+  if (!r.ok){
+    if (data && data.needCode){ ui.codeBox.hidden=false; ui.code.focus(); }
+    throw {code:r.status, message:(data && data.error) || ""};
+  }
+  return {reply:String(data.reply||"Please go on."), good:String(data.good||""), correction:data.correction||null};
+}
+function apiMessage(e){
+  if (e.code==="network") return "Could not reach the tutor. Check the internet connection and try again.";
+  return (e.message || "The tutor could not reply just now.") + " Press Speak to try again.";
+}
+
+/* ---------- one turn ---------- */
+async function startSession(){
+  S.started=true; showErr("");
+  add("tutor", S.sc.opener); S.history.push({role:"assistant", content:S.sc.opener});
+  setState("speaking","Tutor speaking","The tutor is speaking…");
+  await speak(S.sc.opener);
+  if (!cancelled) await learnerTurn();
+}
+async function learnerTurn(spokenText){
+  busy=true; cancelled=false; showErr("");
+  let text=spokenText, ms=0;
+  if (text===undefined){
+    setState("listening","Listening…","Speak now. Stop when you finish.");
+    ui.caption.textContent="";
+    const heard = await listen(); text=heard.text; ms=heard.ms;
+    if (cancelled) return idle();
+    if (!text){ const m=micMessage(heard.error||"no-speech"); showErr(m); return idle(); }
+  }
+  add("learner", text);
+  S.answers++; S.words += normWords(text).length; S.spokenMs += ms; renderStats();
+  setState("thinking","Thinking…","The tutor is thinking…");
+  let out;
+  try { out = await askClaude(text); }
+  catch(e){ showErr(apiMessage(e)); return idle(); }
+  if (cancelled) return idle();
+  S.history.push({role:"user", content:`Learner said: "${text}"`});
+  S.history.push({role:"assistant", content: out.reply});
+  ui.caption.textContent="";
+  if (out.good) add("praise", out.good);
+  if (out.correction){
+    const c=out.correction; add("slip","",c); S.fixes.push({said:c.said||text, better:c.better}); renderStats();
+    setState("speaking","Tutor speaking","Listen to the better way to say it.");
+    await speak("A better way to say it is: " + c.better);
+    if (c.tip) await speak(c.tip, TIP_VOICE[ui.lang.value]);
+    if (!cancelled && ui.drillOn.checked && canListen) await drill(c.better);
+  }
+  if (cancelled) return idle();
+  add("tutor", out.reply);
+  setState("speaking","Tutor speaking","The tutor is speaking…");
+  await speak(out.reply);
+  if (!cancelled && ui.handsFree.checked && canListen && ui.typeForm.hidden) return learnerTurn();
+  idle();
+}
+let skipDrill=false;
+async function drill(sentence){
+  skipDrill=false; ui.drill.hidden=false; paintTarget({words:normWords(sentence), hit:[]}, sentence); ui.meter.textContent="";
+  for (let attempt=1; attempt<=2 && !cancelled && !skipDrill; attempt++){
+    setState("listening","Listening…", attempt===1 ? "Now say the better sentence." : "Try once more.");
+    await speak(attempt===1 ? "Now you say it." : "Try once more.");
+    if (cancelled || skipDrill) break;
+    const heard = await listen(); if (cancelled || skipDrill) break;
+    if (!heard.text){ ui.meter.textContent="Not heard"; continue; }
+    S.spokenMs += heard.ms;
+    const m = matchWords(sentence, heard.text); paintTarget(m, sentence);
+    ui.meter.textContent = `${m.score}% of the words`; S.repeats.push(m.score); renderStats();
+    if (m.score>=80){ await speak(m.score===100 ? "Perfect." : "Good."); break; }
+  }
+  await new Promise(r=>setTimeout(r,600));
+  ui.drill.hidden=true;
+}
+function paintTarget(m, sentence){
+  ui.target.replaceChildren(...m.words.map((w,i)=>{ const s=document.createElement("span"); s.className="w"+(m.hit.length?(m.hit[i]?" hit":" miss"):""); s.textContent=w; return s; })
+    .flatMap((s,i)=> i ? [document.createTextNode(" "), s] : [s]));
+  ui.target.dataset.sentence = sentence;
+}
+function idle(){ busy=false; setState("idle", S.started ? "Speak" : "Start", S.started ? (canListen ? "Press Speak when you are ready to answer." : "Type your answer below.") : "Press Start. The tutor will speak first, then listen to you."); }
+
+ui.talk.addEventListener("click", () => {
+  if (busy) return;
+  cancelled=false; loadVoices();
+  if (!S.started) { busy=true; startSession(); }
+  else learnerTurn();
+});
+ui.stop.addEventListener("click", () => {
+  cancelled=true; if (canSpeak) speechSynthesis.cancel(); if (rec) try{ rec.abort(); }catch(e){}
+  ui.drill.hidden=true; busy=false; idle(); ui.status.textContent="Stopped. Press Speak to carry on.";
+});
+ui.typeToggle.addEventListener("click", () => { ui.typeForm.hidden=!ui.typeForm.hidden; ui.typeToggle.textContent = ui.typeForm.hidden ? "Type instead" : "Hide typing"; if (!ui.typeForm.hidden) ui.typeInput.focus(); });
+ui.typeForm.addEventListener("submit", ev => { ev.preventDefault(); const t=ui.typeInput.value.trim(); if (!t||busy) return; ui.typeInput.value="";
+  if (!S.started){ S.started=true; add("tutor", S.sc.opener); S.history.push({role:"assistant", content:S.sc.opener}); }
+  learnerTurn(t); });
+ui.drillHear.addEventListener("click", () => speak(ui.target.dataset.sentence||""));
+ui.drillSkip.addEventListener("click", () => { skipDrill=true; if (rec) try{rec.abort();}catch(e){} if (canSpeak) speechSynthesis.cancel(); });
+function reset(){ cancelled=true; if (canSpeak) speechSynthesis.cancel(); if (rec) try{rec.abort();}catch(e){}
+  S=newState(); setScene(); ui.log.replaceChildren(); ui.caption.textContent=""; ui.drill.hidden=true; showErr(""); renderStats(); busy=false; idle(); }
+ui.newSession.addEventListener("click", reset);
+ui.scen.addEventListener("change", reset);
+
+S=newState(); setScene(); renderStats(); idle();
+if (!canListen) ui.status.textContent="This browser cannot listen. Use Chrome or Edge to speak, or type your answer below.";
+</script>
+</body>
+</html>
