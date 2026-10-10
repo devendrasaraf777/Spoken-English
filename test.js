@@ -131,6 +131,10 @@ delete process.env.ACCESS_CODE;
 ok(codeAccepted("Mumbai", {Access_code: "mumbai"}), "code in the variable named Access_code also works");
 ok(codeAccepted("batch2", {ACCESS_CODE: "Batch1, Batch2"}) && !codeAccepted("batch3", {ACCESS_CODE: "Batch1, Batch2"}), "several codes separated by commas");
 ok(codeAccepted("anything", {}), "no code set: open to all");
+ok(codeAccepted("Bolo, 2026", {ACCESS_CODE: "Bolo, 2026"}) && codeAccepted("bolo,2026", {ACCESS_CODE: "Bolo, 2026"}), "a code that itself holds a comma still works whole");
+ok(codeAccepted("bolo26", {ACCESS_CODE: '"BOLO26"'}) && codeAccepted("bolo 26", {ACCESS_CODE: "Bolo26"}), "quotes saved in Vercel and spaces inside the code ignored");
+ok(codeAccepted("bolo26", {" Access_Code ": "bolo26"}) && codeAccepted("x1", {ACCESS_CODES: "x1,x2"}), "variable name read whatever its capitals or stray spaces");
+ok(codeAccepted("Bolo\u200B26", {ACCESS_CODE: "bolo26"}), "invisible characters from copy-paste ignored");
 
 // ---- spend protection
 process.env.RATE_LIMIT = "3";
