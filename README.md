@@ -30,6 +30,7 @@ The page sends only the situation, language, level, the learner's words and the 
 | `ACCESS_CODE` | A class code learners must type. Capitals and spaces are ignored. Several codes may be given, separated by commas (for example `batch1, batch2`). A variable named `Access_code` is also read. | Recommended |
 | `TUTOR_MODEL` | `claude-haiku-5-5` (default) or `claude-sonnet-5-5` | No |
 | `RATE_LIMIT` | Answers per device per 10 minutes (default 40) | No |
+| `ANTHROPIC_WORKSPACE_ID` | Needed only if your Claude key is not tied to a workspace: the ID from Claude Console, Settings, Workspaces | Only for such keys |
 
 4. Redeploy. The site is live at `https://<project>.vercel.app`.
 

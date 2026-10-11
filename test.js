@@ -91,6 +91,19 @@ r = await call(good);
 ok(r.code === 502 && /API key was refused/.test(r.data.error), "a refused owner key gives a clear message");
 upstreamStatus = 200;
 
+// ---- key not tied to a workspace
+process.env.ANTHROPIC_WORKSPACE_ID = ' "wrkspc_01TESTWORKSPACE" ';
+await call(good);
+ok(sent.opts.headers["anthropic-workspace-id"] === "wrkspc_01TESTWORKSPACE", "workspace ID sent when set (spaces and quotes removed)");
+delete process.env.ANTHROPIC_WORKSPACE_ID;
+await call(good);
+ok(!("anthropic-workspace-id" in sent.opts.headers), "no workspace header when not set");
+const realFetch2 = globalThis.fetch;
+globalThis.fetch = async () => ({ok: false, status: 400, text: async () => '{"type":"error","error":{"type":"invalid_request_error","message":"This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header"}}'});
+r = await call(good);
+globalThis.fetch = realFetch2;
+ok(r.code === 502 && /ANTHROPIC_WORKSPACE_ID/.test(r.data.error), "workspace error explained to the owner");
+
 // ---- key paste slips
 const K = "sk-ant-api03-abcDEF_123-xyz";
 ok([K, ` ${K} `, `${K}\n`, `"${K}"`, `'${K}'`, `ANTHROPIC_API_KEY=${K}`, `sk-ant-api03-abc DEF_123-xyz`].every(v => ownerKey({ANTHROPIC_API_KEY: v}) === K), "key cleaned of spaces, line breaks, quotes and a pasted variable name");
