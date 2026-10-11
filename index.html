@@ -39,7 +39,7 @@ h1 span{color:var(--accent)}
 @media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:grid;gap:14px;min-width:0}
 label,.lbl{display:grid;gap:4px;font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-select,input[type=password],input[type=text],input[type=range]{font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;text-transform:none;letter-spacing:0}
+select,input[type=password],input[type=text],input[type=email],input[type=tel],input[type=range]{font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;text-transform:none;letter-spacing:0}
 input[type=range]{padding:0;accent-color:var(--accent)}
 .check{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:500;color:var(--ink)}
 select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -103,16 +103,77 @@ details summary{cursor:pointer;font-weight:600}
 .fixlist s{color:var(--muted)}
 .fixlist em{font-style:normal;color:var(--good);font-weight:600}
 @media (prefers-reduced-motion:no-preference){.msg,.slip,.praise{animation:in .2s ease-out}@keyframes in{from{transform:translateY(4px);opacity:.4}}}
+.pausebar{width:100%;max-width:320px;height:4px;border-radius:2px;background:var(--line);overflow:hidden;opacity:0;transition:opacity .2s}
+.pausebar.run{opacity:1}
+.pausebar i{display:block;height:100%;width:0;background:var(--listen)}
+.pausebar.run i{animation:fillbar var(--d,1500ms) linear forwards}
+@keyframes fillbar{to{width:100%}}
+.acct{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;width:100%}
+.acct #acctName{font-weight:600}
+.badge{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 10px;font-size:.85rem;font-weight:600}
+.badge.bad{background:var(--fix-soft);color:var(--fix)}
+.authbox{max-width:440px;margin:0 auto;width:100%}
+.tabs{display:flex;gap:6px}
+.tab{background:transparent;color:var(--accent)}
+.tab[aria-selected=true]{background:var(--accent);color:#fff}
+.authbox form,.sheetbox{display:grid;gap:12px}
+.sheet{position:fixed;inset:0;background:rgba(10,14,30,.55);display:grid;place-items:center;padding:16px;z-index:10;overflow:auto}
+.sheetbox{max-width:480px;width:100%;max-height:calc(100vh - 32px);overflow:auto}
+.sheetbox h2{font-family:var(--display);margin:0;font-size:1.4rem}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.plan{border:1px solid var(--line);border-radius:var(--radius);padding:12px;display:grid;gap:6px;align-content:start}
+.plan .price{font-family:var(--display);font-size:1.6rem;line-height:1.1}
+.plan.current{border-color:var(--accent);background:var(--accent-soft)}
+.notice p{font-size:.9rem;color:var(--muted);margin:.4em 0 0}
+button.danger{background:var(--fix);border-color:var(--fix)}
+details.danger summary{color:var(--fix)}
+button.linkish{background:none;border:0;color:var(--accent);padding:9px 6px;text-decoration:underline;text-underline-offset:3px;font-weight:500}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>English <span>Bolo</span> Tutor</h1>
-    <p class="tag">Speak English out loud in real situations. The tutor listens, answers by voice, corrects one mistake at a time in your language, and asks you to say the better sentence back.</p>
+    <div class="acct" id="acct" hidden><span id="acctName"></span><span class="badge" id="acctPlan"></span><button type="button" class="linkish" id="openProfile">Profile</button><button type="button" class="linkish" id="openPlans">Plans</button><button type="button" class="linkish" id="signOut">Sign out</button></div>
+    <p class="tag">Talk in English, out loud, as on a phone call. Tap Start once; after that just speak. The tutor listens, answers by voice, corrects one mistake at a time with a tip in your language, and you can interrupt it any time by talking.</p>
   </header>
 
-  <div class="grid">
+  <section class="panel authbox" id="authBox" hidden aria-label="Sign in">
+    <div class="tabs" role="tablist"><button type="button" class="tab" role="tab" data-view="signin">Sign in</button><button type="button" class="tab" role="tab" data-view="signup">Create account</button></div>
+    <form id="fSignin" data-view="signin" novalidate>
+      <label for="siEmail">Email <input type="email" id="siEmail" autocomplete="email"></label>
+      <label for="siPass">Password <input type="password" id="siPass" autocomplete="current-password"></label>
+      <button type="submit">Sign in</button>
+      <button type="button" class="linkish" data-goto="forgot">Forgot password?</button>
+    </form>
+    <form id="fSignup" data-view="signup" novalidate hidden>
+      <label for="suName">Your name <input type="text" id="suName" autocomplete="name" maxlength="80"></label>
+      <label for="suEmail">Email <input type="email" id="suEmail" autocomplete="email"></label>
+      <label for="suPass">Password (at least 8 characters) <input type="password" id="suPass" autocomplete="new-password"></label>
+      <label class="check"><input type="checkbox" id="suAge"> I am 18 or older, or my parent or guardian agrees to my using this tutor.</label>
+      <label class="check"><input type="checkbox" id="suPrivacy"> I have read the privacy notice below.</label>
+      <details class="notice"><summary>Privacy notice</summary>
+        <p>We keep your email address, your name, your mobile number if you give it, your practice settings, and a count of the tutor replies you use. We do not keep recordings of your voice.</p>
+        <p>What you say is turned into text by your browser's speech service (Google's, in Chrome). The text is sent to Anthropic's Claude to prepare the tutor's reply.</p>
+        <p>Payments are handled by Razorpay. We do not see or store your card, UPI or bank details.</p>
+        <p>You can delete your account and its data at any time from your profile.</p>
+      </details>
+      <p class="small">You get a 7-day free trial. No payment details are needed to start.</p>
+      <button type="submit">Create account</button>
+    </form>
+    <form id="fForgot" data-view="forgot" novalidate hidden>
+      <label for="fgEmail">Email <input type="email" id="fgEmail" autocomplete="email"></label>
+      <button type="submit">Send reset link</button>
+      <button type="button" class="linkish" data-goto="signin">Back to sign in</button>
+    </form>
+    <form id="fNewpass" data-view="newpass" novalidate hidden>
+      <label for="npPass">New password (at least 8 characters) <input type="password" id="npPass" autocomplete="new-password"></label>
+      <button type="submit">Save new password</button>
+    </form>
+    <p class="codemsg" id="authMsg" aria-live="polite"></p>
+  </section>
+
+  <div class="grid" id="app">
     <main class="panel" aria-label="Speaking practice">
       <div class="stage">
         <form class="codebox" id="codeBox" hidden>
@@ -127,12 +188,13 @@ details summary{cursor:pointer;font-weight:600}
         <button id="talk" class="talk" type="button" data-state="idle" aria-live="polite">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span id="talkLabel">Start</span></span>
         </button>
-        <p class="status" id="status">Press Start. The tutor will speak first, then listen to you.</p>
+        <p class="status" id="status">Tap Start. The tutor speaks first; after that, just talk. No buttons needed.</p>
         <p class="caption" id="caption"></p>
+        <div class="pausebar" id="pauseBar" aria-hidden="true"><i></i></div>
         <div class="row">
-          <button id="stop" type="button" class="ghost" disabled>Stop</button>
-          <button id="typeToggle" type="button" class="ghost">Type instead</button>
+          <button id="end" type="button" class="ghost" disabled>End conversation</button>
           <button id="newSession" type="button" class="ghost">New situation</button>
+          <button id="typeToggle" type="button" class="linkish">Type instead</button>
         </div>
         <form class="typebox" id="typeForm" hidden>
           <input type="text" id="typeInput" placeholder="Type what you would say…" aria-label="Your answer">
@@ -167,10 +229,17 @@ details summary{cursor:pointer;font-weight:600}
           <option value="B2">B2: I speak fairly well</option>
         </select>
       </label>
+      <label for="patience">Wait for me to finish
+        <select id="patience">
+          <option value="1000">Short pause (1 second)</option>
+          <option value="1500" selected>Normal pause (1.5 seconds)</option>
+          <option value="2500">Long pause (2.5 seconds)</option>
+        </select>
+      </label>
       <label for="rate">Tutor's speed <input type="range" id="rate" min="0.7" max="1.3" step="0.05" value="1"></label>
-      <label class="check"><input type="checkbox" id="handsFree" checked> Hands-free: listen again after each reply</label>
       <label class="check"><input type="checkbox" id="drillOn" checked> Ask me to repeat each correction</label>
       <label class="check"><input type="checkbox" id="tipVoice"> Speak tips aloud (slower; tips are always shown)</label>
+      <p class="small">Earphones help: the tutor then cannot hear its own voice from the speaker.</p>
       <div class="stats" aria-label="This session">
         <div class="stat"><b id="sTurns">0</b><small>answers</small></div>
         <div class="stat"><b id="sWords">0</b><small>words spoken</small></div>
@@ -181,6 +250,42 @@ details summary{cursor:pointer;font-weight:600}
       <ol class="fixlist" id="fixes"></ol>
       <p class="small" id="noFix">Mistakes the tutor corrects collect here.</p>
     </aside>
+  </div>
+</div>
+
+<div class="sheet" id="profileSheet" hidden role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+  <form class="panel sheetbox" id="fProfile" novalidate>
+    <h2 id="profileTitle">My profile</h2>
+    <p class="small" id="pfEmail"></p>
+    <label for="pfName">Your name <input type="text" id="pfName" maxlength="80" autocomplete="name"></label>
+    <label for="pfMobile">Mobile number (optional) <input type="tel" id="pfMobile" maxlength="16" inputmode="tel" autocomplete="tel"></label>
+    <label for="pfLang">Tips in
+      <select id="pfLang"><option value="Hindi">हिंदी (Hindi)</option><option value="Marathi">मराठी (Marathi)</option><option value="Bengali">বাংলা (Bengali)</option></select>
+    </label>
+    <label for="pfLevel">My level
+      <select id="pfLevel"><option value="A1">A1: I know some words</option><option value="A2">A2: I can say simple sentences</option><option value="B1">B1: I can talk, with mistakes</option><option value="B2">B2: I speak fairly well</option></select>
+    </label>
+    <label for="pfGoal">I want to practise for
+      <select id="pfGoal"><option>Job interview</option><option>Workplace and customers</option><option>Students</option><option>Everyday</option></select>
+    </label>
+    <label class="check"><input type="checkbox" id="pfAge"> I am 18 or older, or my parent or guardian agrees.</label>
+    <p class="codemsg" id="pfMsg" aria-live="polite"></p>
+    <div class="row"><button type="submit">Save</button><button type="button" class="ghost" data-close>Close</button></div>
+    <details class="danger"><summary>Delete my account</summary>
+      <p class="small">This stops any plan at once and deletes your profile and practice record. Type DELETE to confirm.</p>
+      <div class="row"><input type="text" id="pfDelText" aria-label="Type DELETE to confirm" autocomplete="off"><button type="button" id="pfDelete" class="danger">Delete account</button></div>
+    </details>
+  </form>
+</div>
+
+<div class="sheet" id="plansSheet" hidden role="dialog" aria-modal="true" aria-labelledby="plansTitle">
+  <div class="panel sheetbox">
+    <h2 id="plansTitle">Plans</h2>
+    <p id="plStatus"></p>
+    <div class="plans" id="plCards"></div>
+    <p class="codemsg" id="plMsg" aria-live="polite"></p>
+    <p class="small">Prices include 18% GST. Payment is handled by Razorpay. A plan renews every month until you cancel it; after cancelling you keep it until the end of the month already paid for.</p>
+    <div class="row"><button type="button" id="plCancel" class="ghost" hidden>Cancel my plan</button><button type="button" class="ghost" data-close>Close</button></div>
   </div>
 </div>
 
@@ -205,8 +310,11 @@ const SCENARIOS = [
   {id:"train", use:"Everyday", title:"Booking a train ticket", who:"the ticket counter clerk", opener:"Next please. Where do you want to go?"}
 ];
 const TIP_VOICE = {Hindi:"hi-IN", Marathi:"mr-IN", Bengali:"bn-IN"};
+// Timings in milliseconds. Kept in one place so they can be tuned.
+const TIMING = {nudge:15000, nudgesBeforePause:3, drillWait:8000, echoTail:1500, restart:120};
+window.BoloTiming = TIMING;
 
-/* ---------- pure helpers (tested) ---------- */
+/* ---------- pure helpers ---------- */
 function normWords(s){ return String(s).toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9' ]+/g," ").split(/\s+/).filter(Boolean); }
 // Which target words the learner said, in order (longest common subsequence).
 function matchWords(target, spoken){
@@ -219,25 +327,15 @@ function matchWords(target, spoken){
   const n = hit.filter(Boolean).length;
   return {words:t, hit, score: t.length ? Math.round(n/t.length*100) : 0};
 }
-function parseReply(text){
-  const a = text.indexOf("{"), b = text.lastIndexOf("}");
-  if (a<0 || b<a) throw new Error("no json");
-  const d = JSON.parse(text.slice(a,b+1));
-  const out = {reply:String(d.reply||"").trim(), good:String(d.good||"").trim(), correction:null};
-  const c = d.correction;
-  if (c && typeof c === "object" && c.better) out.correction = {said:String(c.said||""), better:String(c.better), tip:String(c.tip||""), type:String(c.type||"")};
-  if (!out.reply) out.reply = "Please go on.";
-  return out;
-}
 const fmtTime = sec => `${Math.floor(sec/60)}:${String(Math.round(sec%60)).padStart(2,"0")}`;
 
 /* ---------- page ---------- */
 const $ = id => document.getElementById(id);
-const ui = {talk:$("talk"), talkLabel:$("talkLabel"), status:$("status"), caption:$("caption"), stop:$("stop"), typeToggle:$("typeToggle"),
-  typeForm:$("typeForm"), typeInput:$("typeInput"), newSession:$("newSession"), drill:$("drill"), target:$("target"), meter:$("meter"),
-  drillHear:$("drillHear"), drillSkip:$("drillSkip"), err:$("err"), log:$("log"), code:$("code"), codeBox:$("codeBox"), codeMsg:$("codeMsg"), tipVoice:$("tipVoice"),
-  lang:$("lang"), scen:$("scen"), level:$("level"), rate:$("rate"), handsFree:$("handsFree"), drillOn:$("drillOn"),
-  sTurns:$("sTurns"), sWords:$("sWords"), sTime:$("sTime"), sRepeat:$("sRepeat"), fixes:$("fixes"), noFix:$("noFix"),
+const ui = {talk:$("talk"), talkLabel:$("talkLabel"), status:$("status"), caption:$("caption"), pauseBar:$("pauseBar"), end:$("end"),
+  typeToggle:$("typeToggle"), typeForm:$("typeForm"), typeInput:$("typeInput"), newSession:$("newSession"), drill:$("drill"), target:$("target"),
+  meter:$("meter"), drillHear:$("drillHear"), drillSkip:$("drillSkip"), err:$("err"), log:$("log"), code:$("code"), codeBox:$("codeBox"),
+  codeMsg:$("codeMsg"), tipVoice:$("tipVoice"), lang:$("lang"), scen:$("scen"), level:$("level"), rate:$("rate"), patience:$("patience"),
+  drillOn:$("drillOn"), sTurns:$("sTurns"), sWords:$("sWords"), sTime:$("sTime"), sRepeat:$("sRepeat"), fixes:$("fixes"), noFix:$("noFix"),
   scTitle:$("scTitle"), scRole:$("scRole")};
 
 let group=null;
@@ -245,6 +343,7 @@ for (const s of SCENARIOS){
   if (!group || group.label!==s.use){ group=document.createElement("optgroup"); group.label=s.use; ui.scen.append(group); }
   const o=document.createElement("option"); o.value=s.id; o.textContent=s.title; group.append(o);
 }
+
 /* ---------- class code ---------- */
 // The server says whether a class code is needed (GET also wakes the server up, so the first answer is quicker).
 let needCode=false, codeOk=null;   // codeOk: true accepted, false refused, null not checked yet
@@ -262,7 +361,7 @@ async function checkCode(){
     codeOk=null; codeMsg((d && d.error) || "Could not check the code just now.", "bad"); return null;
   } catch(e){ codeOk=null; codeMsg("Could not reach the tutor to check the code. Check the internet connection.", "bad"); return null; }
 }
-// Before a turn: make sure the code is in order, so a spoken answer is never lost to a code error.
+// Before starting: make sure the code is in order, so a spoken answer is never lost to a code error.
 async function codeReady(){
   if (!needCode || codeOk===true) return true;
   const ok = await checkCode();
@@ -271,26 +370,25 @@ async function codeReady(){
 }
 try { const c = localStorage.getItem("bolo-code"); if (c) ui.code.value=c; } catch(e){}
 ui.codeBox.addEventListener("submit", ev => { ev.preventDefault(); showErr(""); checkCode(); });
-fetch("/api/tutor").then(r=>r.json()).then(d => { if (d && d.needCode){ needCode=true; ui.codeBox.hidden=false; if (ui.code.value.trim()) checkCode(); } }).catch(()=>{});
 
 const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
 const canListen = !!Rec, canSpeak = "speechSynthesis" in window;
-if (!canListen){ ui.typeForm.hidden=false; ui.typeToggle.hidden=true; }
 
-let S;              // session state
-let busy = false;   // a turn is running
-let cancelled = false;
-let rec = null;
+/* ---------- state ---------- */
+let S;                  // session record
+let live = false;       // a conversation is running
+let phase = "idle";     // idle | speak | listen | drill | think | paused
+let Turn = null;        // the learner's turn being captured
+let bargedIn = false;   // the learner talked over the tutor (or tapped to interrupt)
+let pendingTyped = "";  // typed answer waiting to be used
+let skipDrill = false;
+const Think = {ctl:null, continued:false, sentWords:0};
 
 function newState(){
   const sc = SCENARIOS.find(s => s.id===ui.scen.value) || SCENARIOS[0];
   return {sc, history:[], started:false, answers:0, words:0, spokenMs:0, fixes:[], repeats:[]};
 }
 function setScene(){ ui.scTitle.textContent=S.sc.title; ui.scRole.textContent=`${S.sc.use} · the tutor is ${S.sc.who}`; }
-function setState(state, label, status){
-  ui.talk.dataset.state=state; ui.talkLabel.textContent=label; if (status!==undefined) ui.status.textContent=status;
-  ui.stop.disabled = state==="idle";
-}
 function showErr(t){ ui.err.textContent=t; ui.err.hidden=!t; }
 function renderStats(){
   ui.sTurns.textContent=S.answers; ui.sWords.textContent=S.words; ui.sTime.textContent=fmtTime(S.spokenMs/1000);
@@ -313,7 +411,23 @@ function renderSlip(d, extra){
   d.replaceChildren(k,r,t);
 }
 function hearBtn(text, lang){ const b=document.createElement("button"); b.type="button"; b.className="hear"; b.textContent="Hear";
-  b.addEventListener("click", () => { if (!busy) speak(text, lang); }); return b; }
+  b.addEventListener("click", () => { if (!live) speak(text, lang); }); return b; }
+
+const LOOK = {
+  idle:   ["idle","Start","Tap Start. The tutor speaks first; after that, just talk. No buttons needed."],
+  paused: ["idle","Continue","Paused. Tap Continue when you are ready."],
+  speak:  ["speaking","Speaking","The tutor is speaking. Just start talking if you want to interrupt."],
+  listen: ["listening","Listening","Your turn. Speak now, and pause when you finish."],
+  drill:  ["listening","Your turn","Say the better sentence."],
+  think:  ["thinking","Thinking","Thinking… keep talking if you have more to say."],
+};
+function setPhase(p, status){
+  const was = phase; phase = p;
+  if (p==="speak" && was!=="speak"){ micReset(); spoken.words = new Set(); }
+  const [state, label, text] = LOOK[p];
+  ui.talk.dataset.state = state; ui.talkLabel.textContent = label; ui.status.textContent = status || text;
+  if (p!=="listen" && p!=="drill") hidePauseBar();
+}
 
 /* ---------- voice out ---------- */
 let voices=[];
@@ -323,62 +437,156 @@ function pickVoice(lang){
   const base=lang.slice(0,2);
   return voices.find(v=>v.lang===lang) || voices.find(v=>v.lang && v.lang.replace("_","-").startsWith(base+"-")) || null;
 }
+// What the tutor has said, so that its own voice coming back through the microphone is not taken as the learner.
+const spoken = {words:new Set(), last:new Set(), endedAt:0};
 function speak(text, lang="en-IN"){
   return new Promise(resolve => {
-    if (!canSpeak || !text || cancelled) return resolve(false);
+    if (!canSpeak || !text || bargedIn) return resolve(false);
     const v = pickVoice(lang);
     if (!v && !lang.startsWith("en")) return resolve(false);   // no voice for this language: show the text only
+    const w = normWords(text); w.forEach(x => spoken.words.add(x)); spoken.last = new Set(w);
     const u = new SpeechSynthesisUtterance(text);
     if (v) u.voice=v; u.lang = v ? v.lang : lang; u.rate = Number(ui.rate.value);
-    let done=false; const end=()=>{ if(!done){done=true; clearTimeout(guard); resolve(true);} };
+    let done=false; const end=()=>{ if(!done){done=true; clearTimeout(guard); spoken.endedAt=Date.now(); resolve(true);} };
     u.onend=end; u.onerror=end;
     const guard=setTimeout(end, 4000 + text.length*120);   // some browsers never fire onend
     speechSynthesis.speak(u);
   });
 }
+const echoShare = (words, set) => words.length ? words.filter(w => set.has(w)).length / words.length : 0;
+// Stop the tutor mid-sentence. manual: the learner tapped, so start a clean capture.
+function interrupt(manual){
+  if (phase!=="speak" || bargedIn) return;
+  bargedIn = true;
+  if (manual) micReset();
+  if (canSpeak) speechSynthesis.cancel();
+}
 
-/* ---------- voice in ---------- */
-function listen(){
-  return new Promise(resolve => {
-    if (!canListen || cancelled) return resolve({text:"", ms:0, error:canListen?"":"unsupported"});
-    rec = new Rec(); rec.lang="en-IN"; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
-    let finalText="", started=0, lastHeard=0, error="";
-    rec.onstart=()=>{ started=Date.now(); };
-    rec.onresult=e=>{ let interim=""; lastHeard=Date.now();
-      for (let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if (r.isFinal) finalText+=r[0].transcript+" "; else interim+=r[0].transcript; }
-      ui.caption.textContent=(finalText+interim).trim(); ui.caption.classList.toggle("interim", !!interim); };
-    rec.onerror=e=>{ error=e.error||"error"; };
-    rec.onend=()=>{ rec=null; ui.caption.classList.remove("interim");
-      resolve({text:finalText.trim(), ms: started&&lastHeard ? Math.max(0,lastHeard-started) : 0, error}); };
-    try { rec.start(); } catch(e){ resolve({text:"", ms:0, error:"start"}); }
-  });
+/* ---------- voice in: one microphone for the whole conversation ---------- */
+// Chrome on Android ignores the "continuous" setting and stops after each phrase, so the microphone is
+// simply opened again; words heard before a restart are carried over into the same answer.
+const Mic = {on:false, rec:null, finals:[], start:0, len:0, interim:"", latest:"", carry:[], clean:false, fatal:"", starts:0};
+const Cap = {text:""};   // everything heard since the last reset
+function micStart(){ Mic.on=true; openRec(); }
+function micStop(){ Mic.on=false; const r=Mic.rec; Mic.rec=null; if (r) try{ r.abort(); }catch(e){} }
+function micReset(){ Mic.start=Mic.len; Mic.carry=[]; Mic.interim=""; Mic.latest=""; Mic.clean=false; Cap.text=""; }
+function micSegments(){ return [...Mic.carry, ...Mic.finals.slice(Mic.start).filter(Boolean), Mic.interim].filter(Boolean); }
+// Words at the start of a piece that the tutor itself said (its voice picked up by the microphone).
+function stripEcho(seg){ const w=normWords(seg); let i=0; while (i<w.length && spoken.words.has(w[i])) i++; return w.slice(i); }
+// After the learner talks over the tutor, pieces that are mostly the tutor's own voice are left out.
+function micText(){
+  let segs = micSegments();
+  if (Mic.clean) segs = segs.map(stripEcho).filter(w => w.length && echoShare(w, spoken.words) < 0.6).map(w => w.join(" "));
+  return segs.join(" ").replace(/\s+/g," ").trim();
+}
+function openRec(){
+  if (!Mic.on || Mic.rec || !canListen) return;
+  const r = new Rec(); r.lang="en-IN"; r.continuous=true; r.interimResults=true; r.maxAlternatives=1;
+  Mic.rec=r; Mic.finals=[]; Mic.start=0; Mic.len=0; Mic.interim=""; Mic.starts++;
+  r.onresult = e => {
+    if (Mic.rec!==r) return;
+    let interim="";
+    for (let i=e.resultIndex;i<e.results.length;i++){ const x=e.results[i]; if (x.isFinal) Mic.finals[i]=x[0].transcript; else if (i>=Mic.start) interim+=x[0].transcript+" "; }
+    Mic.len=e.results.length; Mic.interim=interim.trim();   // only pieces heard since the last reset count
+    Mic.latest = Mic.interim || Mic.finals[Mic.len-1] || "";
+    Cap.text=micText(); heard(Cap.text, Mic.latest);
+  };
+  r.onerror = e => { if (["not-allowed","service-not-allowed","audio-capture"].includes(e.error)) Mic.fatal=e.error; };
+  r.onend = () => {
+    if (Mic.rec===r){ Mic.carry=micSegments(); Mic.finals=[]; Mic.start=0; Mic.len=0; Mic.interim=""; Mic.rec=null; }
+    if (Mic.fatal){ const f=Mic.fatal; Mic.fatal=""; endConversation(micMessage(f)); return; }
+    if (Mic.on) setTimeout(openRec, TIMING.restart);
+  };
+  try { r.start(); } catch(e){ Mic.rec=null; if (Mic.on) setTimeout(openRec, 400); }
 }
 function micMessage(err){
-  if (err==="not-allowed"||err==="service-not-allowed") return "The browser blocked the microphone. Allow microphone access for this page (the icon in the address bar), then press Speak again.";
-  if (err==="no-speech") return "I did not hear anything. Press Speak and talk a little louder.";
+  if (err==="not-allowed"||err==="service-not-allowed") return "The browser blocked the microphone. Allow microphone access for this page (the icon in the address bar), then tap Start.";
   if (err==="audio-capture") return "No microphone was found. Connect one, or use Type instead.";
-  if (err==="network") return "Speech recognition needs an internet connection.";
-  if (err==="unsupported") return "This browser cannot listen. Use Chrome or Edge, or type your answer.";
   return "";
+}
+
+// Everything the microphone hears comes here; what it means depends on the phase.
+function heard(text, latest){
+  if (!live) return;
+  const words = normWords(text);
+  if (phase==="speak"){
+    // In the newest piece heard, three or more words that are mostly not the tutor's own (after any
+    // opening words the tutor said): the learner is talking over the tutor.
+    const rest = stripEcho(latest || "");
+    if (rest.length>=3 && echoShare(rest, spoken.words) < 0.5){ Mic.clean=true; Cap.text=micText(); interrupt(false); }
+    return;
+  }
+  if (phase==="think"){
+    if (Think.ctl && words.length >= Think.sentWords + 2){ Think.continued=true; Think.ctl.abort(); }
+    return;
+  }
+  if ((phase==="listen" || phase==="drill") && Turn){
+    // The end of the tutor's last sentence, heard just after it stopped: not the learner.
+    if (Date.now()-spoken.endedAt < TIMING.echoTail && words.length && echoShare(words, spoken.last) >= 0.8 && !Turn.first){ micReset(); return; }
+    if (!words.length) return;
+    const now=Date.now(); if (!Turn.first) Turn.first=now; Turn.last=now; Turn.text=text;
+    ui.caption.textContent=text; armPause();
+  }
+}
+
+/* ---------- the learner's turn ---------- */
+const patience = () => Number(ui.patience.value) || 1500;
+function showPauseBar(){ const b=ui.pauseBar; b.classList.remove("run"); void b.offsetWidth; b.style.setProperty("--d", patience()+"ms"); b.classList.add("run"); }
+function hidePauseBar(){ ui.pauseBar.classList.remove("run"); }
+function armPause(){ if (!Turn) return; clearTimeout(Turn.timer); Turn.timer=setTimeout(finishTurn, patience()); showPauseBar(); }
+function armIdle(){ if (!Turn) return; clearTimeout(Turn.idle); Turn.idle=setTimeout(onSilence, Turn.kind==="drill" ? TIMING.drillWait : TIMING.nudge); }
+// Wait for the learner to speak, then for a pause. keep: use what was already heard (they talked over the tutor).
+function beginTurn(kind, keep){
+  return new Promise(resolve => {
+    if (!keep) micReset();
+    Turn = {kind, resolve, text:"", first:0, last:0, timer:0, idle:0, nudges:0};
+    setPhase(kind);
+    if (pendingTyped){ Turn.text=pendingTyped; Turn.typed=true; pendingTyped=""; return finishTurn(); }
+    if (keep && normWords(Cap.text).length){ Turn.text=Cap.text; Turn.first=Turn.last=Date.now(); ui.caption.textContent=Cap.text; armPause(); }
+    if (!canListen) setPhase(kind, "Type your answer below and press Send.");
+    else armIdle();
+  });
+}
+function finishTurn(){
+  const t=Turn; if (!t) return;
+  clearTimeout(t.timer); clearTimeout(t.idle); Turn=null; hidePauseBar();
+  t.resolve({text:t.text.trim(), ms: t.typed ? 0 : Math.max(0, t.last-t.first), typed:!!t.typed});
+}
+async function onSilence(){
+  const t=Turn; if (!t || t.text) return;
+  if (t.kind==="drill") return finishTurn();          // no repeat heard: move on
+  t.nudges++;
+  if (t.nudges >= TIMING.nudgesBeforePause) return pauseConversation();
+  setPhase("speak", "Take your time.");
+  await speak(t.nudges===1 ? "Take your time. Start speaking whenever you are ready." : "I am still listening.");
+  if (Turn!==t || !live) return;
+  const keep = bargedIn; bargedIn=false;
+  setPhase(t.kind);
+  if (keep && normWords(Cap.text).length){ t.text=Cap.text; t.first=t.last=Date.now(); ui.caption.textContent=Cap.text; armPause(); }
+  else { micReset(); armIdle(); }
 }
 
 /* ---------- tutor server ---------- */
 // The server streams one JSON object per line: {better}, then {reply}, then {done}. onPart gets the
 // early pieces so the tutor can start speaking before the whole answer has been written.
 function finalOut(d){ return {reply:String(d.reply||"Please go on."), good:String(d.good||""), correction:(d.correction && d.correction.better) ? d.correction : null}; }
-async function askClaude(learnerText, onPart){
+async function askClaude(learnerText, onPart, signal){
   const body = {scenario:S.sc.id, lang:ui.lang.value, level:ui.level.value, said:learnerText,
     history:S.history.slice(-12), code:ui.code.value.trim()};
   let r;
-  try { r = await fetch("/api/tutor", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(body)}); }
-  catch(e){ throw {code:"network"}; }
+  const headers = {"content-type":"application/json"};
+  if (A.on){ const t = await accessToken(); if (t) headers.authorization = "Bearer " + t; }
+  try { r = await fetch("/api/tutor", {method:"POST", headers, body:JSON.stringify(body), signal}); }
+  catch(e){ throw {code: signal && signal.aborted ? "aborted" : "network"}; }
   const type = (r.headers && r.headers.get && r.headers.get("content-type")) || "";
   if (!r.ok || !type.includes("ndjson")){
     let data = null; try { data = await r.json(); } catch(e){}
     if (r.ok && data && data.reply) return finalOut(data);
     if (data && data.needCode) askForCode(data.error);
-    throw {code:r.status, message:(data && data.error) || ""};
+    throw {code:r.status, message:(data && data.error) || "", needLogin:!!(data && data.needLogin), needPlan:!!(data && data.needPlan), reason:data && data.reason};
   }
+  const left = r.headers && r.headers.get ? r.headers.get("X-Replies-Left") : null;
+  if (A.on && A.allow && left!==null && left!==""){ A.allow.left = Number(left); renderAcct(); }
   let final=null, buf="";
   const line = l => {
     if (!l.trim()) return;
@@ -393,87 +601,349 @@ async function askClaude(learnerText, onPart){
         buf+=dec.decode(value,{stream:true}); let i; while((i=buf.indexOf("\n"))>=0){ line(buf.slice(0,i)); buf=buf.slice(i+1); } }
       line(buf);
     } else (await r.text()).split("\n").forEach(line);
-  } catch(e){ if (e && e.code) throw e; throw {code:"network"}; }
+  } catch(e){ if (e && e.code) throw e; throw {code: signal && signal.aborted ? "aborted" : "network"}; }
   if (!final) throw {code:"stream", message:"The tutor's reply was cut off."};
   return finalOut(final);
 }
 function apiMessage(e){
-  if (e.code==="network") return "Could not reach the tutor. Check the internet connection and try again.";
-  return (e.message || "The tutor could not reply just now.") + " Press Speak to try again.";
+  if (e.code==="network") return "Could not reach the tutor. Check the internet connection, then tap Start.";
+  return (e.message || "The tutor could not reply just now.") + " Tap Start to carry on.";
 }
 
-/* ---------- one turn ---------- */
-async function startSession(){
-  S.started=true; showErr("");
-  add("tutor", S.sc.opener); S.history.push({role:"assistant", content:S.sc.opener});
-  setState("speaking","Tutor speaking","The tutor is speaking…");
-  await speak(S.sc.opener);
-  if (!cancelled) await learnerTurn();
+/* ---------- learner accounts (switched on when the site owner has set up Supabase) ---------- */
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js";
+const CHECKOUT_JS = "https://checkout.razorpay.com/v1/checkout.js";
+const RECOVERY = /type=recovery/.test(location.hash);        // arrived from a password-reset email
+const A = {on:false, cfg:null, sb:null, user:null, profile:null, sub:null, allow:null, limits:{}};
+const au = {acct:$("acct"), acctName:$("acctName"), acctPlan:$("acctPlan"), authBox:$("authBox"), authMsg:$("authMsg"), app:$("app"),
+  profileSheet:$("profileSheet"), plansSheet:$("plansSheet"), pfMsg:$("pfMsg"), plMsg:$("plMsg"), plStatus:$("plStatus"), plCards:$("plCards"), plCancel:$("plCancel")};
+const REASONS = {
+  trial_over:"Your 7-day free trial has ended. Choose a plan to carry on.",
+  trial_used_up:"You have used all the replies in your free trial. Choose a plan to carry on.",
+  month_used_up:"You have used this month's replies. They renew on the 1st of next month.",
+  no_plan:"Your plan is not active. Choose a plan to carry on.",
+};
+const PLAN_NAME = {trial:"Free trial", basic:"Basic", plus:"Plus"};
+const fmtDate = d => { const x=new Date(d); return isNaN(x) ? "" : `${String(x.getDate()).padStart(2,"0")}.${String(x.getMonth()+1).padStart(2,"0")}.${x.getFullYear()}`; };
+const daysLeft = d => Math.max(0, Math.ceil((new Date(d) - Date.now()) / 86400000));
+function msg(el, text, state){ el.textContent=text||""; el.className="codemsg"+(state?" "+state:""); }
+function loadScript(src, globalName){
+  if (window[globalName]) return Promise.resolve();
+  return new Promise((resolve, reject) => { const s=document.createElement("script"); s.src=src; s.onload=()=>resolve(); s.onerror=()=>reject(new Error("load")); document.head.append(s); });
 }
-async function learnerTurn(spokenText){
-  busy=true; cancelled=false; showErr("");
-  let text=spokenText, ms=0;
-  if (text===undefined){
-    setState("listening","Listening…","Speak now. Stop when you finish.");
-    ui.caption.textContent="";
-    const heard = await listen(); text=heard.text; ms=heard.ms;
-    if (cancelled) return idle();
-    if (!text){ const m=micMessage(heard.error||"no-speech"); showErr(m); return idle(); }
+async function accessToken(){ if (!A.sb) return ""; const {data} = await A.sb.auth.getSession(); return (data && data.session && data.session.access_token) || ""; }
+async function billing(body){
+  const t = await accessToken();
+  try {
+    const r = await fetch("/api/billing", {method:"POST", headers:{"content-type":"application/json", authorization:"Bearer "+t}, body:JSON.stringify(body)});
+    const data = await r.json().catch(()=>({}));
+    if (r.status===401 && data.needLogin){ signOutLocal("Please sign in again."); }
+    return {ok:r.ok, status:r.status, data};
+  } catch(e){ return {ok:false, status:0, data:{error:"Could not reach the server. Check the internet connection."}}; }
+}
+
+async function boot(){
+  let cfg=null;
+  try { cfg = await (await fetch("/api/tutor")).json(); } catch(e){}
+  if (cfg && cfg.auth==="accounts") return startAccounts(cfg);
+  if (cfg && cfg.needCode){ needCode=true; ui.codeBox.hidden=false; if (ui.code.value.trim()) checkCode(); }   // class-code mode
+}
+async function startAccounts(cfg){
+  A.on=true; A.cfg=cfg; au.app.hidden=true;
+  try { await loadScript(SUPABASE_JS, "supabase"); }
+  catch(e){ showAuth("signin", "Could not load the sign-in service. Check the internet connection and reload the page.", "bad"); return; }
+  A.sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
+  A.sb.auth.onAuthStateChange(event => {
+    if (event==="PASSWORD_RECOVERY") showAuth("newpass", "Choose a new password.");
+    if (event==="SIGNED_OUT" && A.user) leaveApp();
+  });
+  const {data} = await A.sb.auth.getSession();
+  if (RECOVERY) return showAuth("newpass", "Choose a new password.");
+  if (data && data.session) return enterApp(data.session.user);
+  showAuth("signin");
+}
+
+/* sign in, create account, forgotten password */
+function showAuth(view, text, state){
+  au.authBox.hidden=false; au.app.hidden=true; au.acct.hidden=true;
+  for (const f of au.authBox.querySelectorAll("form")) f.hidden = f.dataset.view!==view;
+  for (const t of au.authBox.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t.dataset.view===view));
+  msg(au.authMsg, text||"", state);
+}
+au.authBox.querySelectorAll(".tab,[data-goto]").forEach(b => b.addEventListener("click", () => showAuth(b.dataset.view || b.dataset.goto)));
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+function authError(err){
+  const m = String((err && err.message) || "");
+  if (/invalid login credentials/i.test(m)) return "Email or password is not right.";
+  if (/email not confirmed/i.test(m)) return "Please confirm your email first: open the link we sent you, then sign in.";
+  if (/already registered|already been registered/i.test(m)) return "An account with this email already exists. Sign in instead.";
+  if (/rate limit|too many/i.test(m)) return "Too many tries. Please wait a few minutes and try again.";
+  if (/password/i.test(m)) return "Please choose a stronger password (at least 8 characters).";
+  return "Something went wrong. Please try again.";
+}
+$("fSignin").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const email=$("siEmail").value.trim(), password=$("siPass").value;
+  if (!validEmail(email) || !password) return msg(au.authMsg, "Enter your email and password.", "bad");
+  msg(au.authMsg, "Signing in…");
+  const {data, error} = await A.sb.auth.signInWithPassword({email, password});
+  if (error) return msg(au.authMsg, authError(error), "bad");
+  $("siPass").value=""; enterApp(data.user);
+});
+$("fSignup").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const full_name=$("suName").value.trim(), email=$("suEmail").value.trim(), password=$("suPass").value;
+  if (!full_name) return msg(au.authMsg, "Please enter your name.", "bad");
+  if (!validEmail(email)) return msg(au.authMsg, "Please enter a valid email address.", "bad");
+  if (password.length<8) return msg(au.authMsg, "The password must have at least 8 characters.", "bad");
+  if (!$("suAge").checked) return msg(au.authMsg, "Please confirm that you are 18 or older, or that a parent or guardian agrees.", "bad");
+  if (!$("suPrivacy").checked) return msg(au.authMsg, "Please read the privacy notice and tick the box.", "bad");
+  msg(au.authMsg, "Creating your account…");
+  const {data, error} = await A.sb.auth.signUp({email, password, options:{emailRedirectTo: location.origin + location.pathname, data:{full_name, age_confirmed:true}}});
+  if (error) return msg(au.authMsg, authError(error), "bad");
+  $("suPass").value="";
+  if (data && data.session) return enterApp(data.user);
+  showAuth("signin", `We have sent a confirmation link to ${email}. Open it, then sign in here.`, "ok");
+});
+$("fForgot").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const email=$("fgEmail").value.trim();
+  if (!validEmail(email)) return msg(au.authMsg, "Please enter a valid email address.", "bad");
+  await A.sb.auth.resetPasswordForEmail(email, {redirectTo: location.origin + location.pathname});
+  msg(au.authMsg, "If an account exists for this email, a reset link has been sent. Open it on this device.", "ok");
+});
+$("fNewpass").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const password=$("npPass").value;
+  if (password.length<8) return msg(au.authMsg, "The password must have at least 8 characters.", "bad");
+  const {data, error} = await A.sb.auth.updateUser({password});
+  if (error) return msg(au.authMsg, authError(error), "bad");
+  $("npPass").value=""; try { history.replaceState(null, "", location.pathname); } catch(e){}
+  enterApp(data.user);
+});
+
+/* signed in */
+async function enterApp(user){
+  A.user=user; au.authBox.hidden=true; au.app.hidden=false; au.acct.hidden=false; msg(au.authMsg, "");
+  await refreshAccount();
+  applyProfile();
+  if (!profileComplete()) openProfile("Please add your name and confirm the age statement before you start.");
+}
+async function refreshAccount(){
+  if (!A.user) return;
+  const uid=A.user.id;
+  const [p, s, a, l] = await Promise.all([
+    A.sb.from("profiles").select("*").eq("id", uid).maybeSingle(),
+    A.sb.from("subscriptions").select("*").eq("user_id", uid).maybeSingle(),
+    A.sb.rpc("use_reply", {consume:false}),
+    A.sb.from("plan_limits").select("*"),
+  ]);
+  A.profile = (p && p.data) || null; A.sub = (s && s.data) || null; A.allow = (a && a.data) || null;
+  A.limits = {}; for (const row of ((l && l.data) || [])) A.limits[row.plan] = row;
+  renderAcct();
+}
+const profileComplete = () => !!(A.profile && A.profile.full_name && A.profile.age_confirmed);
+function renderAcct(){
+  au.acctName.textContent = (A.profile && A.profile.full_name) || (A.user && A.user.email) || "";
+  const a=A.allow, b=au.acctPlan; b.classList.remove("bad");
+  if (!a){ b.textContent=""; return; }
+  if (a.ok && a.plan==="trial") b.textContent = `Free trial · ${daysLeft(a.until)} days · ${a.left} replies left`;
+  else if (a.ok) b.textContent = `${PLAN_NAME[a.plan]||a.plan} · ${a.left} replies left this month` + (A.sub && A.sub.cancel_at_cycle_end && a.until ? ` · ends ${fmtDate(a.until)}` : "");
+  else { b.classList.add("bad"); b.textContent = {trial_over:"Trial ended", trial_used_up:"Trial replies used", month_used_up:"Month's replies used"}[a.reason] || "No active plan"; }
+}
+function applyProfile(){
+  const p=A.profile; if (!p || live || S.started) return;
+  ui.lang.value=p.tip_language; ui.level.value=p.level;
+  const sc = SCENARIOS.find(x => x.use===p.goal); if (sc && ui.scen.value!==sc.id){ ui.scen.value=sc.id; reset(); }
+}
+async function accountReady(){
+  if (!A.user){ showAuth("signin"); return false; }
+  if (!profileComplete()){ openProfile("Please add your name and confirm the age statement before you start."); return false; }
+  if (A.allow && !A.allow.ok){ openPlans(REASONS[A.allow.reason] || REASONS.no_plan); return false; }
+  return true;
+}
+function signOutLocal(text){ if (A.sb) A.sb.auth.signOut().catch(()=>{}); leaveApp(text); }
+function leaveApp(text){
+  endConversation(); A.user=null; A.profile=null; A.sub=null; A.allow=null;
+  closeSheets(); reset(); showAuth("signin", text || "", text ? "bad" : "");
+}
+$("signOut").addEventListener("click", () => signOutLocal());
+
+/* profile */
+function openSheet(el){ el.hidden=false; const f=el.querySelector("input,select,button"); if (f) f.focus(); }
+function closeSheets(){ au.profileSheet.hidden=true; au.plansSheet.hidden=true; }
+document.querySelectorAll(".sheet [data-close]").forEach(b => b.addEventListener("click", closeSheets));
+document.addEventListener("keydown", ev => { if (ev.key==="Escape") closeSheets(); });
+function openProfile(text){
+  const p=A.profile || {};
+  $("pfEmail").textContent = `Signed in as ${A.user ? A.user.email : ""}` + (p.created_at ? ` · member since ${fmtDate(p.created_at)}` : "");
+  $("pfName").value=p.full_name||""; $("pfMobile").value=p.mobile||""; $("pfLang").value=p.tip_language||"Hindi";
+  $("pfLevel").value=p.level||"A2"; $("pfGoal").value=p.goal||"Job interview"; $("pfAge").checked=!!p.age_confirmed; $("pfDelText").value="";
+  msg(au.pfMsg, text||"", text ? "bad" : ""); openSheet(au.profileSheet);
+}
+$("openProfile").addEventListener("click", () => openProfile());
+$("fProfile").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const row = {full_name:$("pfName").value.trim(), mobile:$("pfMobile").value.trim(), tip_language:$("pfLang").value,
+    level:$("pfLevel").value, goal:$("pfGoal").value, age_confirmed:$("pfAge").checked};
+  if (!row.full_name) return msg(au.pfMsg, "Please enter your name.", "bad");
+  if (!/^[0-9+ ]{0,16}$/.test(row.mobile)) return msg(au.pfMsg, "The mobile number may have only digits, spaces and +.", "bad");
+  if (!row.age_confirmed) return msg(au.pfMsg, "Please confirm that you are 18 or older, or that a parent or guardian agrees.", "bad");
+  msg(au.pfMsg, "Saving…");
+  const {data, error} = await A.sb.from("profiles").update(row).eq("id", A.user.id).select().single();
+  if (error) return msg(au.pfMsg, "Could not save just now. Please try again.", "bad");
+  A.profile=data; renderAcct(); applyProfile(); msg(au.pfMsg, "Saved.", "ok");
+  setTimeout(() => { if (!au.profileSheet.hidden && profileComplete()) closeSheets(); }, 700);
+});
+$("pfDelete").addEventListener("click", async () => {
+  if ($("pfDelText").value.trim()!=="DELETE") return msg(au.pfMsg, "Type DELETE in the box to confirm.", "bad");
+  msg(au.pfMsg, "Deleting your account…");
+  const r = await billing({action:"delete_account"});
+  if (!r.ok) return msg(au.pfMsg, r.data.error || "Could not delete the account just now.", "bad");
+  signOutLocal("Your account and its data have been deleted.");
+});
+
+/* plans and payment */
+function openPlans(text){ renderPlans(); msg(au.plMsg, text||"", text ? "bad" : ""); openSheet(au.plansSheet); }
+$("openPlans").addEventListener("click", () => openPlans());
+function renderPlans(){
+  const a=A.allow||{}, s=A.sub||{}, cfg=A.cfg||{};
+  const running = ["basic","plus"].includes(s.plan) && ["active","authenticated","pending"].includes(s.status);
+  if (a.ok && a.plan==="trial") au.plStatus.textContent = `You are on the free trial: ${daysLeft(a.until)} days and ${a.left} replies left.`;
+  else if (running) au.plStatus.textContent = `Your plan: ${PLAN_NAME[s.plan]}. ` + (s.cancel_at_cycle_end ? `Cancelled; it ends on ${fmtDate(s.current_end)}.` : `Next renewal ${fmtDate(s.current_end)}.`);
+  else au.plStatus.textContent = REASONS[a.reason] || "Choose a plan to carry on practising.";
+  const card = (plan, extra) => {
+    const l=A.limits[plan] || {}, d=document.createElement("div"); d.className="plan"+(running && s.plan===plan ? " current" : "");
+    const h=document.createElement("strong"); h.textContent=PLAN_NAME[plan];
+    const pr=document.createElement("span"); pr.className="price"; pr.textContent=`₹${l.price_inr ?? (plan==="plus"?299:149)}`;
+    const per=document.createElement("span"); per.className="small"; per.textContent=`a month · ${l.replies ?? 400} tutor replies a month`;
+    const x=document.createElement("span"); x.className="small"; x.textContent=extra;
+    const b=document.createElement("button"); b.type="button"; b.dataset.plan=plan;
+    const soon = plan==="plus" && !cfg.plusEnabled;
+    b.textContent = running && s.plan===plan ? "Your plan" : soon ? "Coming soon" : `Choose ${PLAN_NAME[plan]}`;
+    b.disabled = running || soon || !cfg.payments;
+    b.addEventListener("click", () => subscribe(plan));
+    d.append(h, pr, per, x, b); return d;
+  };
+  au.plCards.replaceChildren(card("basic", "Live voice practice with corrections and tips."), card("plus", "Everything in Basic, plus more voice features as they are added."));
+  au.plCancel.hidden = !(running && !s.cancel_at_cycle_end);
+  if (!cfg.payments) msg(au.plMsg, "Payments are being set up. Please check again soon.");
+}
+async function subscribe(plan){
+  msg(au.plMsg, "Opening the payment window…");
+  const r = await billing({action:"subscribe", plan});
+  if (!r.ok) return msg(au.plMsg, r.data.error || "Could not start the payment.", "bad");
+  try { await loadScript(CHECKOUT_JS, "Razorpay"); }
+  catch(e){ return msg(au.plMsg, "Could not load the payment window. Check the internet connection.", "bad"); }
+  const d=r.data, p=A.profile||{};
+  const rz = new window.Razorpay({key:d.key, subscription_id:d.subscription_id, name:"English Bolo Tutor",
+    description:`${PLAN_NAME[plan]} plan, monthly`, prefill:{name:p.full_name||"", email:d.email||"", contact:p.mobile||""}, theme:{color:"#1f6f8b"},
+    handler: async resp => {
+      msg(au.plMsg, "Checking the payment…");
+      const v = await billing({action:"verify", ...resp});
+      await refreshAccount(); renderPlans();
+      msg(au.plMsg, v.ok ? `Payment received. Your ${PLAN_NAME[plan]} plan is active.` : (v.data.error || "Could not confirm the payment yet."), v.ok ? "ok" : "bad");
+    },
+    modal:{ondismiss: () => msg(au.plMsg, "Payment window closed before the payment was finished.")}});
+  rz.on("payment.failed", e => msg(au.plMsg, "Payment failed: " + ((e && e.error && e.error.description) || "please try again."), "bad"));
+  rz.open();
+}
+au.plCancel.addEventListener("click", async () => {
+  msg(au.plMsg, "Cancelling…");
+  const r = await billing({action:"cancel"});
+  await refreshAccount(); renderPlans();
+  msg(au.plMsg, r.ok ? "Cancelled. You keep your plan until the end of the month already paid for." : (r.data.error || "Could not cancel just now."), r.ok ? "ok" : "bad");
+});
+
+/* ---------- the conversation ---------- */
+async function startConversation(){
+  if (live) return;
+  showErr("");
+  if (A.on ? !(await accountReady()) : !(await codeReady())) return;
+  live=true; bargedIn=false; loadVoices();
+  ui.end.disabled=false;
+  if (canListen) micStart();
+  if (!S.started){
+    S.started=true;
+    add("tutor", S.sc.opener); S.history.push({role:"assistant", content:S.sc.opener});
+    setPhase("speak"); await speak(S.sc.opener);
   }
-  add("learner", text);
-  S.answers++; S.words += normWords(text).length; S.spokenMs += ms; renderStats();
-  setState("thinking","Thinking…","The tutor is thinking…");
-  let better=null, slipEl=null, sayBetter=null, replyEl=null, sayReply=null;
+  conversation();
+}
+async function conversation(){
+  while (live){
+    const keep = bargedIn; bargedIn=false;
+    const ans = await beginTurn("listen", keep);
+    if (!live) return;
+    if (!ans.text) continue;
+    await respond(ans);
+  }
+}
+async function respond(ans){
+  let text = ans.text;
+  const bubble = add("learner", text);
+  S.answers++; S.spokenMs += ans.ms; renderStats();
+  let out, better=null, slipEl=null, sayBetter=null, replyEl=null, sayReply=null;
   const onPart = m => {
-    if (cancelled) return;
+    if (!live || Think.continued) return;
     if (typeof m.better==="string" && better===null){
       better=m.better; ui.caption.textContent="";
       if (better){ slipEl=add("slip","",{better, tip:"", type:""});
-        setState("speaking","Tutor speaking","Listen to the better way to say it."); sayBetter=speak("Better: "+better); }
+        setPhase("speak","Listen to the better way to say it."); sayBetter=speak("Better: "+better); }
     }
     if (typeof m.reply==="string" && better==="" && !replyEl){   // no mistake: speak the reply at once
-      replyEl=add("tutor", m.reply); setState("speaking","Tutor speaking","The tutor is speaking…"); sayReply=speak(m.reply);
+      replyEl=add("tutor", m.reply); setPhase("speak"); sayReply=speak(m.reply);
     }
   };
-  let out;
-  try { out = await askClaude(text, onPart); }
-  catch(e){ if (cancelled) return idle(); showErr(apiMessage(e)); return idle(); }
-  if (cancelled) return idle();
+  for (;;){
+    Think.ctl = new AbortController(); Think.continued=false; Think.sentWords = normWords(text).length;
+    setPhase("think");
+    try { out = await askClaude(text, onPart, Think.ctl.signal); break; }
+    catch(e){
+      if (!live) return;
+      if (Think.continued){   // the learner carried on talking: wait for the rest, then send the whole answer
+        const more = await beginTurn("listen", true);
+        if (!live) return;
+        if (more.text){ text = more.text; bubble.textContent = text; S.spokenMs += more.ms; }
+        better=null; continue;
+      }
+      if (e.needLogin && A.on){ endConversation(); return signOutLocal("Please sign in again."); }
+      if (e.needPlan){ endConversation(e.message); A.allow = {ok:false, reason:e.reason}; renderAcct(); return openPlans(e.message); }
+      return endConversation(apiMessage(e));
+    } finally { Think.ctl=null; }
+  }
+  S.words += normWords(text).length; renderStats();
+  if (!live) return;
   const c=out.correction;
   S.history.push({role:"user", content:`Learner said: "${text}"`});
-  const past={better:c?c.better:"", reply:out.reply, good:out.good, said:c?c.said:"", tip:c?c.tip:"", type:c?c.type:""};
+  const past={rule:c?c.rule||"":"", better:c?c.better:"", reply:out.reply, good:out.good, said:c?c.said:"", tip:c?c.tip:""};
   if (JSON.stringify(past).length>400){ past.tip=""; past.good=""; }   // the server keeps 400 characters per turn
   S.history.push({role:"assistant", content: JSON.stringify(past)});
   ui.caption.textContent="";
   if (out.good) add("praise", out.good, null, slipEl||replyEl);
   if (c){
-    if (slipEl) renderSlip(slipEl, c); else { slipEl=add("slip","",c); setState("speaking","Tutor speaking","Listen to the better way to say it."); sayBetter=speak("Better: "+c.better); }
+    if (slipEl) renderSlip(slipEl, c); else { slipEl=add("slip","",c, replyEl); setPhase("speak","Listen to the better way to say it."); sayBetter=speak("Better: "+c.better); }
     S.fixes.push({said:c.said||text, better:c.better}); renderStats();
-    await sayBetter;
-    if (c.tip && ui.tipVoice.checked) await speak(c.tip, TIP_VOICE[ui.lang.value]);
-    if (!cancelled && ui.drillOn.checked && canListen) await drill(c.better);
-  }
-  if (cancelled) return idle();
-  if (!replyEl){ replyEl=add("tutor", out.reply); setState("speaking","Tutor speaking","The tutor is speaking…"); sayReply=speak(out.reply); }
+    await sayBetter; if (bargedIn || !live) return;
+    if (c.tip && ui.tipVoice.checked){ await speak(c.tip, TIP_VOICE[ui.lang.value]); if (bargedIn || !live) return; }
+    if (ui.drillOn.checked && canListen){ await drill(c.better); if (bargedIn || !live) return; }
+  } else if (slipEl){ slipEl.remove(); }
+  if (!replyEl){ replyEl=add("tutor", out.reply); setPhase("speak"); sayReply=speak(out.reply); }
   await sayReply;
-  if (!cancelled && ui.handsFree.checked && canListen && ui.typeForm.hidden) return learnerTurn();
-  idle();
 }
-let skipDrill=false;
 async function drill(sentence){
   skipDrill=false; ui.drill.hidden=false; paintTarget({words:normWords(sentence), hit:[]}, sentence); ui.meter.textContent="";
-  for (let attempt=1; attempt<=2 && !cancelled && !skipDrill; attempt++){
-    setState("listening","Listening…", attempt===1 ? "Now say the better sentence." : "Try once more.");
-    await speak(attempt===1 ? "Your turn." : "Once more.");
-    if (cancelled || skipDrill) break;
-    const heard = await listen(); if (cancelled || skipDrill) break;
-    if (!heard.text){ ui.meter.textContent="Not heard"; continue; }
-    S.spokenMs += heard.ms;
-    const m = matchWords(sentence, heard.text); paintTarget(m, sentence);
+  for (let attempt=1; attempt<=2 && live && !skipDrill; attempt++){
+    setPhase("speak"); await speak(attempt===1 ? "Your turn." : "Once more.");
+    if (bargedIn || !live) break;
+    const h = await beginTurn("drill", false);
+    if (!live || skipDrill) break;
+    if (!h.text){ ui.meter.textContent="Not heard"; break; }
+    S.spokenMs += h.ms;
+    const m = matchWords(sentence, h.text); paintTarget(m, sentence);
     ui.meter.textContent = `${m.score}% of the words`; S.repeats.push(m.score); renderStats();
-    if (m.score>=80){ await speak(m.score===100 ? "Perfect." : "Good."); break; }
+    if (m.score>=80){ setPhase("speak"); await speak(m.score===100 ? "Perfect." : "Good."); break; }
   }
-  await new Promise(r=>setTimeout(r,250));
   ui.drill.hidden=true;
 }
 function paintTarget(m, sentence){
@@ -481,33 +951,49 @@ function paintTarget(m, sentence){
     .flatMap((s,i)=> i ? [document.createTextNode(" "), s] : [s]));
   ui.target.dataset.sentence = sentence;
 }
-function idle(){ busy=false; setState("idle", S.started ? "Speak" : "Start", S.started ? (canListen ? "Press Speak when you are ready to answer." : "Type your answer below.") : "Press Start. The tutor will speak first, then listen to you."); }
+function stopEverything(){
+  micStop();
+  if (canSpeak) speechSynthesis.cancel();
+  if (Think.ctl) Think.ctl.abort();
+  if (Turn){ const t=Turn; clearTimeout(t.timer); clearTimeout(t.idle); Turn=null; t.resolve({text:"", ms:0}); }
+  bargedIn=false; pendingTyped="";
+  ui.drill.hidden=true; hidePauseBar(); ui.caption.textContent="";
+}
+function pauseConversation(message){
+  if (!live) return;
+  live=false; stopEverything(); setPhase("paused", message);
+}
+function endConversation(message){
+  const was=live; live=false; stopEverything();
+  ui.end.disabled=true; setPhase("idle", S.started ? "Conversation ended. Tap Start to carry on." : undefined);
+  if (message) showErr(message);
+  return was;
+}
 
-ui.talk.addEventListener("click", async () => {
-  if (busy) return;
-  busy=true; cancelled=false; loadVoices(); showErr("");
-  if (!(await codeReady())){ busy=false; return; }
-  if (!S.started) startSession();
-  else learnerTurn();
+/* ---------- controls ---------- */
+ui.talk.addEventListener("click", () => {
+  if (!live) return startConversation();
+  if (phase==="speak") return interrupt(true);
+  if ((phase==="listen" || phase==="drill") && Turn){ if (Turn.text) finishTurn(); else ui.status.textContent="I have not heard anything yet. Please speak."; }
 });
-ui.stop.addEventListener("click", () => {
-  cancelled=true; if (canSpeak) speechSynthesis.cancel(); if (rec) try{ rec.abort(); }catch(e){}
-  ui.drill.hidden=true; busy=false; idle(); ui.status.textContent="Stopped. Press Speak to carry on.";
-});
+ui.end.addEventListener("click", () => endConversation());
 ui.typeToggle.addEventListener("click", () => { ui.typeForm.hidden=!ui.typeForm.hidden; ui.typeToggle.textContent = ui.typeForm.hidden ? "Type instead" : "Hide typing"; if (!ui.typeForm.hidden) ui.typeInput.focus(); });
-ui.typeForm.addEventListener("submit", async ev => { ev.preventDefault(); const t=ui.typeInput.value.trim(); if (!t||busy) return;
-  busy=true; if (!(await codeReady())){ busy=false; return; } ui.typeInput.value="";
-  if (!S.started){ S.started=true; add("tutor", S.sc.opener); S.history.push({role:"assistant", content:S.sc.opener}); }
-  learnerTurn(t); });
-ui.drillHear.addEventListener("click", () => speak(ui.target.dataset.sentence||""));
-ui.drillSkip.addEventListener("click", () => { skipDrill=true; if (rec) try{rec.abort();}catch(e){} if (canSpeak) speechSynthesis.cancel(); });
-function reset(){ cancelled=true; if (canSpeak) speechSynthesis.cancel(); if (rec) try{rec.abort();}catch(e){}
-  S=newState(); setScene(); ui.log.replaceChildren(); ui.caption.textContent=""; ui.drill.hidden=true; showErr(""); renderStats(); busy=false; idle(); }
+ui.typeForm.addEventListener("submit", ev => {
+  ev.preventDefault(); const t=ui.typeInput.value.trim(); if (!t) return; ui.typeInput.value="";
+  if (Turn && Turn.kind==="listen"){ Turn.text=t; Turn.typed=true; return finishTurn(); }
+  pendingTyped=t;
+  if (!live) startConversation(); else if (phase==="speak") interrupt(true);
+});
+ui.drillHear.addEventListener("click", () => { if (!live) speak(ui.target.dataset.sentence||""); });
+ui.drillSkip.addEventListener("click", () => { skipDrill=true; if (Turn && Turn.kind==="drill"){ Turn.text=""; finishTurn(); } else if (phase==="speak") interrupt(true); });
+function reset(){ endConversation(); S=newState(); setScene(); ui.log.replaceChildren(); showErr(""); renderStats(); setPhase("idle"); }
 ui.newSession.addEventListener("click", reset);
 ui.scen.addEventListener("change", reset);
+document.addEventListener("visibilitychange", () => { if (document.hidden && live) pauseConversation("Paused while the page was in the background. Tap Continue."); });
 
-S=newState(); setScene(); renderStats(); idle();
-if (!canListen) ui.status.textContent="This browser cannot listen. Use Chrome or Edge to speak, or type your answer below.";
+S=newState(); setScene(); renderStats(); setPhase("idle");
+boot();
+if (!canListen){ ui.typeForm.hidden=false; ui.typeToggle.hidden=true; ui.status.textContent="This browser cannot listen. Use Chrome to talk, or type your answers below."; }
 </script>
 </body>
 </html>

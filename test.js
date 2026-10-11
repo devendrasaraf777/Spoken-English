@@ -1,5 +1,5 @@
 // Offline tests for the server function. No real Anthropic call is made.
-import handler, {SCENARIOS, validate, parseReply, finishedField, codeAccepted, ownerKey, MAX_TOKENS} from "./api/tutor.js";
+import handler, {SCENARIOS, RULES, validate, parseReply, finishedField, codeAccepted, ownerKey, keepCorrection, rules, MAX_TOKENS} from "./api/tutor.js";
 import fs from "node:fs";
 
 let failed = 0;
@@ -20,7 +20,7 @@ function call(body, {ip = "1.1.1.1", method = "POST"} = {}) {
 
 // Fake Anthropic streaming endpoint: sends the model text in small chunks as server-sent events.
 let sent = null, calls = 0, chunksSent = 0, modelText = "", failMidway = false, upstreamStatus = 200;
-const reply = {better: "I completed my BCom last year", reply: "Good. What work do you do?", good: "Clear answer.",
+const reply = {rule: "VT-20", better: "I completed my BCom last year", reply: "Good. What work do you do?", good: "Clear answer.",
   said: "I am completed", tip: "\"I completed\" बोलें।", type: "tense"};
 globalThis.fetch = async (url, opts) => {
   calls++; sent = {url, opts, body: JSON.parse(opts.body)}; chunksSent = 0;
@@ -68,9 +68,9 @@ ok(sent.url === "https://api.anthropic.com/v1/messages" && sent.opts.headers["x-
 ok(!JSON.stringify(r.lines).includes("sk-test"), "key never returned to the browser");
 ok(sent.body.model === "claude-haiku-5-5" && sent.body.messages.length === 1 && sent.body.messages[0].role === "user", "leading tutor opener dropped; conversation starts with the learner");
 ok(sent.body.system[0].text.includes("Tell me about yourself") && sent.body.system[0].text.includes("Hindi"), "prompt built on the server from the situation");
-ok(/"better".*"reply".*"good".*"said".*"tip".*"type"/.test(sent.body.system[0].text), "prompt asks for the fast key order");
+ok(/"rule".*"better".*"reply".*"good".*"said".*"tip"/.test(sent.body.system[0].text), "prompt asks for the fast key order");
 
-modelText = JSON.stringify({...reply, better: "", said: "", tip: "", type: ""});
+modelText = JSON.stringify({...reply, rule: "", better: "", said: "", tip: ""});
 r = await call(good);
 ok(r.lines[0].better === "" && r.lines[1].reply === reply.reply && r.lines[2].done.correction === null, "no mistake: empty better, reply streamed, no correction");
 
@@ -98,6 +98,46 @@ process.env.ANTHROPIC_API_KEY = ` "sk-test"\n`;
 await call(good);
 ok(sent.opts.headers["x-api-key"] === "sk-test", "cleaned key is the one sent to Claude");
 process.env.ANTHROPIC_API_KEY = "sk-test";
+
+// ---- grammar rules (english-grammar skill register)
+const everyday = {...good, scenario: "doctor"};
+let pr = rules(SCENARIOS[0], "Hindi", "A2");
+ok(pr.includes("IE-15:") && pr.includes("VT-05:") && pr.includes("IE-05:"), "interview prompt carries class (a) rules and the formal Indian-usage rules");
+ok(!/SC-04|PR-01/.test(pr), "rules with status U or C are not given to the tutor");
+pr = rules(SCENARIOS.find(x => x.id === "doctor"), "Hindi", "A2");
+ok(pr.includes("IE-15:") && !pr.includes("IE-05:") && /Do NOT correct Indian usages/.test(pr), "everyday prompt leaves Indian usage alone");
+ok(/NEVER correct/.test(pr) && /two years back/.test(pr) && /singular "they"/.test(pr), "prompt lists accepted usage that must not be corrected");
+ok(Object.values(RULES).every(x => ["V2", "V1", "P"].includes(x.st)), "every rule given to the tutor is V2, V1 or P");
+modelText = JSON.stringify({...reply, rule: "IE-15", better: "I have worked here for two years"});
+r = await call(good);
+ok(r.lines[2].done.correction.rule === "IE-15" && r.lines[2].done.correction.type === "IE-15 · since and for", "correction carries its rule ID and label");
+modelText = JSON.stringify({...reply, rule: "XX-99"});
+r = await call(good);
+ok(r.lines[2].done.correction.rule === "" && r.lines[2].done.correction.better === reply.better, "an invented rule ID is dropped, the correction kept without it");
+modelText = JSON.stringify({...reply, rule: "IE-05", better: "Can we bring the meeting forward?"});
+r = await call(everyday);
+ok(r.lines[0].better === "" && r.lines.at(-1).done.correction === null, "Indian usage not corrected in an everyday situation (stream and final)");
+r = await call(good);
+ok(r.lines[0].better === "Can we bring the meeting forward?" && r.lines.at(-1).done.correction.rule === "IE-05", "Indian usage corrected in a job interview");
+modelText = JSON.stringify({...reply, rule: "VT-20", better: "i am completed my BCom!"});
+r = await call(good);
+ok(r.lines[0].better === "" && r.lines.at(-1).done.correction === null, "a 'correction' identical to what was said is dropped");
+ok(keepCorrection("VT-20", "I completed it", "I am completed it", SCENARIOS[0]) && !keepCorrection("", "", "x", SCENARIOS[0]), "keepCorrection basic cases");
+
+// ---- learner keeps talking: the page cancels, the server stops Claude
+modelText = JSON.stringify(reply);
+let aborted = false;
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, opts) => { opts.signal.addEventListener("abort", () => { aborted = true; }); return realFetch(url, opts); };
+await new Promise(resolve => {
+  const listeners = {};
+  const res = {code: 200, writableEnded: false, setHeader() {}, status(c) { this.code = c; return this; }, json() { resolve(); return this; },
+    on(ev, fn) { listeners[ev] = fn; }, write() { if (listeners.close) { const f = listeners.close; delete listeners.close; f(); } },
+    end() { this.writableEnded = true; resolve(); }};
+  handler({method: "POST", body: good, headers: {"x-forwarded-for": "5.5.5.5"}}, res);
+});
+globalThis.fetch = realFetch;
+ok(aborted, "when the page cancels, the Claude request is cancelled too");
 
 // ---- helpers
 ok(finishedField('{"better":"I wen', "better") === null && finishedField('{"better":"I \\"went\\" home","re', "better") === 'I "went" home', "field read only once its closing quote arrives");
