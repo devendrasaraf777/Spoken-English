@@ -296,9 +296,14 @@ export default async function handler(req, res) {
   // If the learner carries on talking, the page cancels this request; stop paying for Claude's answer too.
   const stop = new AbortController();
   res.on?.("close", () => { if (!res.writableEnded) stop.abort(); });
+  // A key that is not tied to one workspace must name the workspace on every request (Claude Console:
+  // Settings -> Workspaces, ID column). Set ANTHROPIC_WORKSPACE_ID in Vercel for such a key.
+  const headers = {"content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01"};
+  const workspace = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim().replace(/^["'`]+|["'`]+$/g, "");
+  if (workspace) headers["anthropic-workspace-id"] = workspace;
   const claude = fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {"content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01"},
+    headers,
     body: JSON.stringify(payload),
     signal: stop.signal,
   }).then(r => ({r}), e => ({e}));
@@ -324,6 +329,7 @@ export default async function handler(req, res) {
       return res.status(502).json({error: "The tutor is not set up correctly: the site owner's Claude API key was refused. The owner must paste a new key in Vercel and redeploy."});
     }
     if (r.status === 400 && /credit|billing/i.test(lastErr)) return res.status(502).json({error: "The tutor is paused: the site owner's Claude account has no credit left."});
+    if ((r.status === 400 || r.status === 404) && /workspace/i.test(lastErr)) return res.status(502).json({error: "The tutor is not set up correctly: the site owner's Claude key needs a workspace. The owner must add ANTHROPIC_WORKSPACE_ID in Vercel, or use a key made inside a workspace."});
     return res.status(502).json({error: r.status === 429 ? "The tutor is busy. Try again in a minute." : "The tutor could not reply just now. Try again."});
   }
 
